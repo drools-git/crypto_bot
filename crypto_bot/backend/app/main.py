@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.logging_config import setup_logging
 from app.api.market import router as market_router
+from app.api.news import router as news_router
 from loguru import logger
 
 # Initialize global logging
@@ -17,6 +18,7 @@ app = FastAPI(
 
 # Include API Routers
 app.include_router(market_router, prefix=settings.API_V1_STR)
+app.include_router(news_router, prefix=settings.API_V1_STR)
 
 # Configure CORS for local Next.js instance
 if settings.BACKEND_CORS_ORIGINS:
