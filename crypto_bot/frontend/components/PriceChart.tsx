@@ -60,7 +60,9 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     // Sync timelines
     const syncCharts = (source: IChartApi, targets: IChartApi[]) => {
       source.timeScale().subscribeVisibleTimeRangeChange((range) => {
-        targets.forEach(t => t.timeScale().setVisibleRange(range!));
+        if (range) {
+          targets.forEach(t => t.timeScale().setVisibleRange(range));
+        }
       });
     };
     syncCharts(mainChart, [rsiChart, macdChart, adxChart]);
