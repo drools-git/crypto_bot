@@ -111,6 +111,8 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
           adxPos.setData(data.filter((d: any) => d.adx_pos !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.adx_pos })));
           adxNeg.setData(data.filter((d: any) => d.adx_neg !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.adx_neg })));
 
+          let lastCandleTime = candles[candles.length - 1].time;
+
           setLoading(false);
           
           // Connect WS for live price tick updates (candles only for performance)
@@ -120,7 +122,20 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
             const message = JSON.parse(event.data);
             if (message.k) {
               const kline = message.k;
-              const tickTime = Math.floor(kline.t / 1000) as any;
+              let tickTime = Math.floor(kline.t / 1000) as any;
+              
+              // Handle timestamp mismatch between CoinGecko (Historical) and Binance (Live WS)
+              if (tickTime < lastCandleTime) {
+                // If within the same timeframe window, force align to prevent crash
+                if (lastCandleTime - tickTime <= 3600) {
+                  tickTime = lastCandleTime;
+                } else {
+                  return; // Ignore severely delayed ticks
+                }
+              } else {
+                lastCandleTime = tickTime;
+              }
+
               candleSeries.update({
                 time: tickTime,
                 open: parseFloat(kline.o),
