@@ -17,19 +17,25 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#d1d5db',
+        background: { type: ColorType.Solid, color: '#000000' },
+        textColor: '#9ca3af',
       },
       grid: {
-        vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
-        horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
+        vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
+        horzLines: { color: 'rgba(255, 255, 255, 0.03)' },
+      },
+      crosshair: {
+        mode: 0, // Normal mode
       },
       width: chartContainerRef.current.clientWidth,
-      height: 400,
+      height: chartContainerRef.current.clientHeight,
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.1)',
         timeVisible: true,
       },
+      rightPriceScale: {
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+      }
     });
 
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
@@ -42,14 +48,33 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
     chartRef.current = chart;
 
+    let ws: WebSocket;
+
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/market/klines?symbol=${symbol}&timeframe=1h&limit=100`);
+        const response = await fetch(`http://localhost:8000/api/v1/market/klines?symbol=${symbol}&timeframe=1h&limit=200`);
         const data = await response.json();
         
         if (Array.isArray(data)) {
           candlestickSeries.setData(data);
           setLoading(false);
+          
+          // Connect WS after initial data
+          const stream = symbol.toLowerCase().replace('/', '');
+          ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}@kline_1h`);
+          ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.k) {
+              const kline = message.k;
+              candlestickSeries.update({
+                time: Math.floor(kline.t / 1000) as any,
+                open: parseFloat(kline.o),
+                high: parseFloat(kline.h),
+                low: parseFloat(kline.l),
+                close: parseFloat(kline.c),
+              });
+            }
+          };
         }
       } catch (error) {
         console.error('Error fetching klines:', error);
@@ -60,7 +85,10 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+        chartRef.current.applyOptions({ 
+          width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight
+        });
       }
     };
 
@@ -68,6 +96,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (ws) ws.close();
       chart.remove();
     };
   }, [symbol]);
@@ -75,8 +104,8 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
   return (
     <div className="relative w-full h-full">
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a]/50 backdrop-blur-sm z-10">
-          <p className="text-blue-500 text-sm animate-pulse">Loading Chart Data...</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10">
+          <p className="text-blue-500 text-sm animate-pulse font-mono">SYNCING TICKER...</p>
         </div>
       )}
       <div ref={chartContainerRef} className="w-full h-full" />
