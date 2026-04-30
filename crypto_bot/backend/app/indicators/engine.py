@@ -25,8 +25,7 @@ class IndicatorEngine:
         for ind in self.indicators:
             df = ind.calculate(df)
             
-        # Clean up NaNs created by rolling windows (fill with 0 or drop)
-        df.fillna(0, inplace=True)
+        # We leave NaNs intact so the API endpoint can convert them to None properly
         return df
 
 indicator_engine = IndicatorEngine()
