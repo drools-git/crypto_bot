@@ -1,32 +1,51 @@
-from fastapi import APIRouter, HTTPException
-import ccxt.async_support as ccxt
+from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any
+from app.market.market_data_manager import market_data_engine
+from app.market.models import OHLCV, MarketHealth
 
 router = APIRouter(prefix="/market", tags=["market"])
 
-@router.get("/klines")
-async def get_klines(symbol: str = "BTC/USDT", timeframe: str = "1h", limit: int = 100):
-    """
-    Fetch historical klines (candlestick data) from Binance public API.
-    """
-    exchange = ccxt.binance()
+@router.get("/klines", response_model=List[OHLCV])
+async def get_klines(
+    symbol: str = Query("BTC/USDT"), 
+    timeframe: str = Query("1h"), 
+    limit: int = Query(100)
+):
+    """Fetch OHLCV primarily from CoinGecko, fallback to Binance."""
     try:
-        # Fetch OHLCV data
-        ohlcv = await exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
-        
-        # Format for Lightweight Charts
-        formatted_data = []
-        for candle in ohlcv:
-            formatted_data.append({
-                "time": candle[0] // 1000, # Convert ms to s
-                "open": candle[1],
-                "high": candle[2],
-                "low": candle[3],
-                "close": candle[4]
-            })
-        
-        return formatted_data
+        return await market_data_engine.get_historical_ohlcv(symbol, timeframe, limit)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        await exchange.close()
+
+@router.get("/ticker/live")
+async def get_live_ticker(symbol: str = Query("BTCUSDT")):
+    """Get live ticker data powered by Binance WebSocket with REST fallback."""
+    ticker = market_data_engine.get_realtime_ticker(symbol)
+    if not ticker:
+        # Fallback to REST if WS hasn't populated yet
+        try:
+            return await market_data_engine.provider_manager.fetch_ticker(symbol)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Ticker not available yet via WS or REST.")
+    return ticker
+    
+@router.get("/orderbook/live")
+async def get_live_orderbook(symbol: str = Query("BTCUSDT")):
+    """Get order book depth data powered by Binance WebSocket."""
+    ob = market_data_engine.get_orderbook(symbol)
+    if not ob:
+        raise HTTPException(status_code=503, detail="Orderbook stream is still initializing.")
+    return ob
+
+@router.get("/health", response_model=List[MarketHealth])
+async def get_market_health():
+    """Source health monitoring and latency logging."""
+    return market_data_engine.provider_manager.get_health_status()
+
+@router.get("/fear-and-greed")
+async def get_fear_and_greed():
+    """Get Fear and Greed Index from Alternative.me."""
+    try:
+        return await market_data_engine.provider_manager.fetch_fear_greed()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

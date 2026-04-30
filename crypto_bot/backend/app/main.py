@@ -28,13 +28,17 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+from app.market.stream_services import start_market_streams, stop_market_streams
+
 @app.on_event("startup")
 async def startup_event():
     logger.info(f"Starting up {settings.PROJECT_NAME} backend...")
+    await start_market_streams()
 
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info(f"Shutting down {settings.PROJECT_NAME} backend...")
+    await stop_market_streams()
 
 @app.get("/health")
 def health_check():
