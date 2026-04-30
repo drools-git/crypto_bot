@@ -85,29 +85,31 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
         const data = await response.json();
         
         if (Array.isArray(data)) {
-          // Parse data
-          const candles = data.map((d: any) => ({ time: d.time, open: d.open, high: d.high, low: d.low, close: d.close }));
-          const volumes = data.map((d: any) => ({ time: d.time, value: d.volume, color: d.close >= d.open ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)' }));
+          // Parse data and convert timestamp to seconds (required by lightweight-charts)
+          const getUnixTime = (t: any) => (t > 10000000000 ? Math.floor(t / 1000) : t) as any;
+
+          const candles = data.map((d: any) => ({ time: getUnixTime(d.time), open: d.open, high: d.high, low: d.low, close: d.close }));
+          const volumes = data.map((d: any) => ({ time: getUnixTime(d.time), value: d.volume, color: d.close >= d.open ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)' }));
           
           candleSeries.setData(candles);
           volumeSeries.setData(volumes);
           
-          ema20.setData(data.filter(d => d.ema_20).map(d => ({ time: d.time, value: d.ema_20 })));
-          ema50.setData(data.filter(d => d.ema_50).map(d => ({ time: d.time, value: d.ema_50 })));
-          ema200.setData(data.filter(d => d.ema_200).map(d => ({ time: d.time, value: d.ema_200 })));
-          vwap.setData(data.filter(d => d.vwap).map(d => ({ time: d.time, value: d.vwap })));
-          bbHigh.setData(data.filter(d => d.bb_high).map(d => ({ time: d.time, value: d.bb_high })));
-          bbLow.setData(data.filter(d => d.bb_low).map(d => ({ time: d.time, value: d.bb_low })));
+          ema20.setData(data.filter((d: any) => d.ema_20 !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.ema_20 })));
+          ema50.setData(data.filter((d: any) => d.ema_50 !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.ema_50 })));
+          ema200.setData(data.filter((d: any) => d.ema_200 !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.ema_200 })));
+          vwap.setData(data.filter((d: any) => d.vwap !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.vwap })));
+          bbHigh.setData(data.filter((d: any) => d.bb_high !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.bb_high })));
+          bbLow.setData(data.filter((d: any) => d.bb_low !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.bb_low })));
 
-          rsiSeries.setData(data.filter(d => d.rsi).map(d => ({ time: d.time, value: d.rsi })));
+          rsiSeries.setData(data.filter((d: any) => d.rsi !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.rsi })));
 
-          macdLine.setData(data.filter(d => d.macd).map(d => ({ time: d.time, value: d.macd })));
-          macdSignal.setData(data.filter(d => d.macd_signal).map(d => ({ time: d.time, value: d.macd_signal })));
-          macdHist.setData(data.filter(d => d.macd_hist).map(d => ({ time: d.time, value: d.macd_hist, color: d.macd_hist >= 0 ? '#10b981' : '#ef4444' })));
+          macdLine.setData(data.filter((d: any) => d.macd !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.macd })));
+          macdSignal.setData(data.filter((d: any) => d.macd_signal !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.macd_signal })));
+          macdHist.setData(data.filter((d: any) => d.macd_hist !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.macd_hist, color: d.macd_hist >= 0 ? '#10b981' : '#ef4444' })));
 
-          adxLine.setData(data.filter(d => d.adx).map(d => ({ time: d.time, value: d.adx })));
-          adxPos.setData(data.filter(d => d.adx_pos).map(d => ({ time: d.time, value: d.adx_pos })));
-          adxNeg.setData(data.filter(d => d.adx_neg).map(d => ({ time: d.time, value: d.adx_neg })));
+          adxLine.setData(data.filter((d: any) => d.adx !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.adx })));
+          adxPos.setData(data.filter((d: any) => d.adx_pos !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.adx_pos })));
+          adxNeg.setData(data.filter((d: any) => d.adx_neg !== null).map((d: any) => ({ time: getUnixTime(d.time), value: d.adx_neg })));
 
           setLoading(false);
           
