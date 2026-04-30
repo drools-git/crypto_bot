@@ -31,6 +31,8 @@ describe('NewsFeed Component', () => {
     render(<NewsFeed />);
 
     await waitFor(() => {
+      // Ensure the dynamic host logic falls back to localhost in JSDOM
+      expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/v1/news/latest?limit=15');
       expect(screen.getByText('Bitcoin hits new ATH')).toBeInTheDocument();
       expect(screen.getByText('CoinTelegraph')).toBeInTheDocument();
     });

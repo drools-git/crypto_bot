@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any
 from app.market.market_data_manager import market_data_engine
+from app.indicators.engine import indicator_engine
+import pandas as pd
 from app.market.models import OHLCV, MarketHealth
 
 router = APIRouter(prefix="/market", tags=["market"])
@@ -49,3 +51,31 @@ async def get_fear_and_greed():
         return await market_data_engine.provider_manager.fetch_fear_greed()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/indicators", response_model=List[Dict[str, Any]])
+async def get_klines_with_indicators(
+    symbol: str = Query(..., example="BTC/USDT"),
+    timeframe: str = Query("1h", example="1h"),
+    limit: int = Query(200, ge=1, le=1000)
+):
+    """Get historical OHLCV data enriched with all technical indicators."""
+    klines = await market_data_engine.get_historical_ohlcv(symbol, timeframe, limit)
+    if not klines:
+        return []
+        
+    df = pd.DataFrame([{
+        "time": k.time,
+        "open": k.open,
+        "high": k.high,
+        "low": k.low,
+        "close": k.close,
+        "volume": k.volume
+    } for k in klines])
+    
+    df = indicator_engine.add_indicators(df)
+    
+    # We must convert float NaNs and Infs to None to be JSON compliant
+    import numpy as np
+    df = df.replace([np.inf, -np.inf, np.nan], None)
+    
+    return df.to_dict(orient='records')
