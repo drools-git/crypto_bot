@@ -28,6 +28,6 @@ class Settings(BaseSettings):
     class Config:
         case_sensitive = True
         env_file = os.path.join(BASE_DIR, ".env")
-        extra = "ignore" # Safely ignore extra environment variables
+        extra = "ignore"
 
 settings = Settings()

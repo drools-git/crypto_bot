@@ -17,11 +17,12 @@ import {
   ShieldCheck,
   Zap
 } from "lucide-react";
+import { PriceChart } from "@/components/PriceChart";
 
 export default function Home() {
   return (
     <div className="flex h-screen bg-[#050505] text-zinc-100 font-sans overflow-hidden">
-      {/* Sidebar Sidebar */}
+      {/* Sidebar */}
       <aside className="w-64 border-r border-white/5 bg-[#0a0a0a] flex flex-col">
         <div className="p-6 flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)]">
@@ -143,15 +144,9 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Placeholder for TradingView chart */}
-              <div className="flex-1 min-h-[400px] w-full rounded-xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex items-center justify-center relative overflow-hidden group">
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]"></div>
-                <div className="z-10 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto border border-blue-500/20 animate-pulse">
-                    <PieChart className="w-8 h-8 text-blue-500" />
-                  </div>
-                  <p className="text-zinc-500 text-sm font-medium">TradingView Lightweight Charts Initialization...</p>
-                </div>
+              {/* Real TradingView chart */}
+              <div className="flex-1 min-h-[400px] w-full rounded-xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent relative overflow-hidden group">
+                <PriceChart symbol="BTC/USDT" />
               </div>
             </div>
 

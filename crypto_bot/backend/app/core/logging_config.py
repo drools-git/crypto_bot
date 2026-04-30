@@ -4,7 +4,7 @@ from loguru import logger
 from app.core.config import settings
 
 def setup_logging():
-    """Initialize system-wide logging configuration with formatting and rotation."""
+    """Initialize system-wide logging configuration."""
     # Ensure log directory exists
     os.makedirs(settings.LOG_DIR, exist_ok=True)
     
@@ -17,7 +17,7 @@ def setup_logging():
         level="INFO"
     )
     
-    # Add root file handler
+    # Add file handler
     log_file = os.path.join(settings.LOG_DIR, "trading_bot.log")
     logger.add(
         log_file,
