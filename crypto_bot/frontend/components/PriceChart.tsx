@@ -61,7 +61,13 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     const syncCharts = (source: IChartApi, targets: IChartApi[]) => {
       source.timeScale().subscribeVisibleTimeRangeChange((range) => {
         if (range) {
-          targets.forEach(t => t.timeScale().setVisibleRange(range));
+          targets.forEach(t => {
+            try {
+              t.timeScale().setVisibleRange(range);
+            } catch (e) {
+              // Target chart might not have data yet, ignore
+            }
+          });
         }
       });
     };
