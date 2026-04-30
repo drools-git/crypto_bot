@@ -7,7 +7,8 @@ export const NewsFeed = () => {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/v1/news/latest?limit=15');
+        const host = window.location.hostname || 'localhost';
+        const res = await fetch(`http://${host}:8000/api/v1/news/latest?limit=15`);
         const data = await res.json();
         setNews(data);
       } catch(e) {

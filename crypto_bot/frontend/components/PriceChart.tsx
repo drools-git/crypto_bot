@@ -52,7 +52,8 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/market/klines?symbol=${symbol}&timeframe=1h&limit=200`);
+        const host = window.location.hostname || 'localhost';
+        const response = await fetch(`http://${host}:8000/api/v1/market/klines?symbol=${symbol}&timeframe=1h&limit=200`);
         const data = await response.json();
         
         if (Array.isArray(data)) {
