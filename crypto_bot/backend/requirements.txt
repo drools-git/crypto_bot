@@ -1,0 +1,14 @@
+fastapi>=0.110.0
+uvicorn>=0.27.0
+websockets>=12.0
+ccxt>=4.2.0
+python-binance>=1.0.19
+pandas>=2.2.0
+numpy>=1.26.0
+ta>=0.11.0
+vectorbt>=0.9.0
+backtesting>=0.3.3
+loguru>=0.7.2
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+python-dotenv>=1.0.1
