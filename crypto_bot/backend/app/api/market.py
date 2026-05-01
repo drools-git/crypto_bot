@@ -72,6 +72,19 @@ async def get_klines_with_indicators(
         "volume": k.volume
     } for k in klines])
     
+    # CoinGecko OHLC does not return volume. Supplement from Binance klines.
+    if df['volume'].sum() == 0:
+        try:
+            from app.market.market_data_manager import market_data_engine as mde
+            binance = mde.provider_manager.providers.get("binance")
+            if binance:
+                bin_klines = await binance.fetch_ohlcv(symbol, timeframe, limit)
+                if bin_klines:
+                    vol_map = {k.time: k.volume for k in bin_klines}
+                    df['volume'] = df['time'].map(vol_map).fillna(0.0)
+        except Exception:
+            pass  # Volume stays 0 if Binance fails
+    
     df = indicator_engine.add_indicators(df)
     
     # We must convert float NaNs and Infs to None to be JSON compliant

@@ -101,7 +101,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     const mainChart = createChart(mainRef.current, { ...commonOptions, height: mainRef.current.clientHeight });
     const candleSeries = mainChart.addSeries(CandlestickSeries, { upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444' });
     const volumeSeries = mainChart.addSeries(HistogramSeries, { color: '#26a69a', priceFormat: { type: 'volume' }, priceScaleId: '' });
-    volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+    volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.65, bottom: 0 } });
 
     // Overlays
     const ema20 = mainChart.addSeries(LineSeries, { color: '#3b82f6', lineWidth: 1, crosshairMarkerVisible: false });
