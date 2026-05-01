@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { PriceChart } from "@/components/PriceChart";
 import { OrderBook } from "@/components/OrderBook";
 import { TradeTape } from "@/components/TradeTape";
@@ -91,60 +91,8 @@ export default function TerminalDashboard() {
         </div>
       </div>
 
-      {/* BOTTOM PANEL */}
-      <div className="h-48 border-t border-white/5 bg-[#0a0a0a] flex shrink-0">
-        <div className="w-1/4 border-r border-white/5 flex flex-col">
-          <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01]">
-             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">PERFORMANCE</span>
-          </div>
-          <div className="p-4 flex flex-col gap-2 flex-1 justify-center">
-             <div className="flex justify-between items-end">
-               <span className="text-xs text-zinc-500">Unrealized PNL</span>
-               <span className="font-mono text-emerald-500">+$0.00</span>
-             </div>
-             <div className="flex justify-between items-end">
-               <span className="text-xs text-zinc-500">Realized PNL</span>
-               <span className="font-mono text-emerald-500">+$0.00</span>
-             </div>
-             <div className="flex justify-between items-end mt-2 pt-2 border-t border-white/5">
-               <span className="text-xs text-zinc-500">Total Equity</span>
-               <span className="font-mono text-zinc-200 font-bold">$100,000.00</span>
-             </div>
-          </div>
-        </div>
-
-        <div className="w-1/4 border-r border-white/5 flex flex-col">
-          <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01]">
-             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">OPEN POSITIONS</span>
-          </div>
-          <div className="p-4 text-xs text-zinc-600 font-mono flex items-center justify-center h-full opacity-50">
-            No active positions
-          </div>
-        </div>
-
-        <div className="w-1/4 border-r border-white/5 flex flex-col">
-          <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01]">
-             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">RECENT TRADES</span>
-          </div>
-          <div className="p-4 text-xs text-zinc-600 font-mono flex items-center justify-center h-full opacity-50">
-            No execution history
-          </div>
-        </div>
-
-        <div className="flex-1 flex flex-col">
-          <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01]">
-             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">SYSTEM LOGS</span>
-          </div>
-          <div className="p-3 text-[10px] text-zinc-500 font-mono flex flex-col gap-1.5 overflow-y-auto">
-            <span className="text-emerald-500/70">[SYS] UI Terminal initialized successfully.</span>
-            <span>[NET] Connecting to WSS Binance endpoint...</span>
-            <span className="text-blue-400/70">[NET] Subscribed to btcusdt@depth20</span>
-            <span className="text-blue-400/70">[NET] Subscribed to btcusdt@trade</span>
-            <span className="text-blue-400/70">[NET] Subscribed to btcusdt@kline_1h</span>
-            <span className="text-amber-500/70">[ENG] Strategy engine standby mode.</span>
-          </div>
-        </div>
-      </div>
+      {/* BOTTOM PANEL - Resizable */}
+      <BottomPanel />
     </div>
   );
 }
@@ -159,5 +107,90 @@ function PanelSection({ title, children, flex = false }: { title: string, childr
         {children}
       </div>
     </div>
+  );
+}
+
+function BottomPanel() {
+  const [height, setHeight] = useState(160);
+  const minH = 36; // collapse to just the tab headers
+  const maxH = 300;
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = height;
+    const onMove = (ev: MouseEvent) => {
+      const delta = startY - ev.clientY;
+      setHeight(Math.max(minH, Math.min(maxH, startH + delta)));
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
+  return (
+    <>
+      {/* Drag handle */}
+      <div
+        onMouseDown={handleMouseDown}
+        className="w-full h-[5px] cursor-row-resize bg-white/5 hover:bg-blue-500/40 transition-colors shrink-0"
+      />
+      <div className="bg-[#0a0a0a] flex shrink-0 overflow-hidden" style={{ height }}>
+        <div className="w-1/4 border-r border-white/5 flex flex-col">
+          <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
+            <span className="text-[10px] font-bold text-zinc-500 tracking-widest">PERFORMANCE</span>
+          </div>
+          <div className="p-4 flex flex-col gap-2 flex-1 justify-center overflow-hidden">
+            <div className="flex justify-between items-end">
+              <span className="text-xs text-zinc-500">Unrealized PNL</span>
+              <span className="font-mono text-emerald-500">+$0.00</span>
+            </div>
+            <div className="flex justify-between items-end">
+              <span className="text-xs text-zinc-500">Realized PNL</span>
+              <span className="font-mono text-emerald-500">+$0.00</span>
+            </div>
+            <div className="flex justify-between items-end mt-2 pt-2 border-t border-white/5">
+              <span className="text-xs text-zinc-500">Total Equity</span>
+              <span className="font-mono text-zinc-200 font-bold">$100,000.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-1/4 border-r border-white/5 flex flex-col">
+          <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
+            <span className="text-[10px] font-bold text-zinc-500 tracking-widest">OPEN POSITIONS</span>
+          </div>
+          <div className="p-4 text-xs text-zinc-600 font-mono flex items-center justify-center h-full opacity-50">
+            No active positions
+          </div>
+        </div>
+
+        <div className="w-1/4 border-r border-white/5 flex flex-col">
+          <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
+            <span className="text-[10px] font-bold text-zinc-500 tracking-widest">RECENT TRADES</span>
+          </div>
+          <div className="p-4 text-xs text-zinc-600 font-mono flex items-center justify-center h-full opacity-50">
+            No execution history
+          </div>
+        </div>
+
+        <div className="flex-1 flex flex-col">
+          <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
+            <span className="text-[10px] font-bold text-zinc-500 tracking-widest">SYSTEM LOGS</span>
+          </div>
+          <div className="p-3 text-[10px] text-zinc-500 font-mono flex flex-col gap-1.5 overflow-y-auto">
+            <span className="text-emerald-500/70">[SYS] UI Terminal initialized successfully.</span>
+            <span>[NET] Connecting to WSS Binance endpoint...</span>
+            <span className="text-blue-400/70">[NET] Subscribed to btcusdt@depth20</span>
+            <span className="text-blue-400/70">[NET] Subscribed to btcusdt@trade</span>
+            <span className="text-blue-400/70">[NET] Subscribed to btcusdt@kline_1h</span>
+            <span className="text-amber-500/70">[ENG] Strategy engine standby mode.</span>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

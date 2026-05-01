@@ -189,11 +189,17 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
           let lastCandleTime = candles[candles.length - 1].time;
 
-          // Fit all charts to show all data
+          // Fit main chart first, then force-sync sub-charts to the same range
           mainChart.timeScale().fitContent();
-          rsiChart.timeScale().fitContent();
-          macdChart.timeScale().fitContent();
-          adxChart.timeScale().fitContent();
+          // Small delay to let main chart settle before syncing
+          setTimeout(() => {
+            const range = mainChart.timeScale().getVisibleLogicalRange();
+            if (range) {
+              [rsiChart, macdChart, adxChart].forEach(c => {
+                try { c.timeScale().setVisibleLogicalRange(range); } catch(_) {}
+              });
+            }
+          }, 50);
 
           setLoading(false);
 
