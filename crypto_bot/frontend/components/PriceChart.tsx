@@ -58,16 +58,19 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     const adxNeg = adxChart.addSeries(LineSeries, { color: '#ef4444', lineWidth: 1, lineStyle: 2 });
 
     // Sync timelines
+    let isSyncing = false;
     const syncCharts = (source: IChartApi, targets: IChartApi[]) => {
-      source.timeScale().subscribeVisibleTimeRangeChange((range) => {
-        if (range) {
+      source.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+        if (range && !isSyncing) {
+          isSyncing = true;
           targets.forEach(t => {
             try {
-              t.timeScale().setVisibleRange(range);
+              t.timeScale().setVisibleLogicalRange(range);
             } catch (e) {
-              // Target chart might not have data yet, ignore
+              // Ignore if target isn't ready
             }
           });
+          isSyncing = false;
         }
       });
     };
