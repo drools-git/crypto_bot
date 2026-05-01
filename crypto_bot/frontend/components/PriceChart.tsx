@@ -116,6 +116,12 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
           let lastCandleTime = candles[candles.length - 1].time;
 
+          // Fit all charts to show all data on screen
+          mainChart.timeScale().fitContent();
+          rsiChart.timeScale().fitContent();
+          macdChart.timeScale().fitContent();
+          adxChart.timeScale().fitContent();
+
           setLoading(false);
           
           // Connect WS for live price tick updates (candles only for performance)
