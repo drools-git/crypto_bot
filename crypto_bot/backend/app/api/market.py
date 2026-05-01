@@ -59,8 +59,8 @@ async def get_klines_with_indicators(
     limit: int = Query(200, ge=1, le=1000)
 ):
     """Get historical OHLCV data enriched with all technical indicators."""
-    # Fetch 100 extra candles to account for indicator warm-up (MACD=26, EMA200=200 etc)
-    fetch_limit = limit + 100
+    # Fetch extra candles for warm-up, but cap at 1000 (Binance standard limit)
+    fetch_limit = min(1000, limit + 100)
     klines = await market_data_engine.get_historical_ohlcv(symbol, timeframe, fetch_limit)
     if not klines:
         return []
