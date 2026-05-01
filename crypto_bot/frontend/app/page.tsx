@@ -70,7 +70,7 @@ export default function TerminalDashboard() {
 
         {/* CENTER PANEL */}
         <div className="flex-1 bg-[#000000] relative flex flex-col">
-          <div className="absolute top-4 left-4 z-10 flex gap-4 pointer-events-none">
+          <div className="absolute top-14 left-4 z-10 flex gap-4 pointer-events-none">
              <div className="bg-[#0a0a0a]/80 backdrop-blur border border-white/10 px-3 py-1.5 rounded flex items-center gap-3 shadow-lg">
                <span className="font-mono text-lg font-bold text-zinc-100">BTC/USDT</span>
                <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">1H</span>
