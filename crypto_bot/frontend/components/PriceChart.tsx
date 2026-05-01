@@ -37,6 +37,12 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
   const rsiRef = useRef<HTMLDivElement>(null);
   const macdRef = useRef<HTMLDivElement>(null);
   const adxRef = useRef<HTMLDivElement>(null);
+  
+  // Legend refs
+  const mainLegendRef = useRef<HTMLDivElement>(null);
+  const rsiLegendRef = useRef<HTMLDivElement>(null);
+  const macdLegendRef = useRef<HTMLDivElement>(null);
+  const adxLegendRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
 
   // Panel heights as percentages [main, rsi, macd, adx]
@@ -151,18 +157,77 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     syncCharts(macdChart, [mainChart, rsiChart, adxChart]);
     syncCharts(adxChart, [mainChart, rsiChart, macdChart]);
 
-    // Sync crosshair across all charts
+    // Sync crosshair across all charts and update legends
     const allCharts = [mainChart, rsiChart, macdChart, adxChart];
     let isCrosshairSyncing = false;
+    
     allCharts.forEach((source) => {
       source.subscribeCrosshairMove((param) => {
         if (isCrosshairSyncing) return;
         isCrosshairSyncing = true;
+        
+        // 1. Sync positions
         allCharts.forEach((target) => {
           if (target !== source && param.time) {
             target.setCrosshairPosition(NaN, param.time, target.options().rightPriceScale ? (target as any)._private__seriesMap?.values()?.next()?.value : undefined);
           }
         });
+
+        // 2. Update Legends
+        const updateLegend = (ref: React.RefObject<HTMLDivElement>, content: string) => {
+          if (ref.current) ref.current.innerHTML = content;
+        };
+
+        const data = param.seriesData;
+        
+        // Main Chart Legend
+        const candleData = data.get(candleSeries) as any;
+        if (candleData) {
+          updateLegend(mainLegendRef, `
+            <div class="flex gap-3 text-[11px] font-mono">
+              <span class="text-zinc-100 font-bold">${symbol}</span>
+              <span class="text-zinc-400">O: <span class="${candleData.close >= candleData.open ? 'text-emerald-500' : 'text-rose-500'}">${candleData.open.toFixed(2)}</span></span>
+              <span class="text-zinc-400">H: <span class="text-emerald-500">${candleData.high.toFixed(2)}</span></span>
+              <span class="text-zinc-400">L: <span class="text-rose-500">${candleData.low.toFixed(2)}</span></span>
+              <span class="text-zinc-400">C: <span class="${candleData.close >= candleData.open ? 'text-emerald-500' : 'text-rose-500'}">${candleData.close.toFixed(2)}</span></span>
+            </div>
+          `);
+        }
+
+        // RSI Legend
+        const rsiVal = data.get(rsiSeries) as any;
+        if (rsiVal) {
+          updateLegend(rsiLegendRef, `<span class="text-purple-400">RSI(14): ${rsiVal.value.toFixed(2)}</span>`);
+        }
+
+        // MACD Legend
+        const mLine = data.get(macdLine) as any;
+        const mSignal = data.get(macdSignal) as any;
+        const mHist = data.get(macdHist) as any;
+        if (mLine && mSignal && mHist) {
+          updateLegend(macdLegendRef, `
+            <div class="flex gap-2 text-blue-400">
+              <span>MACD: ${mLine.value.toFixed(2)}</span>
+              <span class="text-amber-500">Signal: ${mSignal.value.toFixed(2)}</span>
+              <span class="${mHist.value >= 0 ? 'text-emerald-500' : 'text-rose-500'}">Hist: ${mHist.value.toFixed(2)}</span>
+            </div>
+          `);
+        }
+
+        // ADX Legend
+        const aLine = data.get(adxLine) as any;
+        const aPos = data.get(adxPos) as any;
+        const aNeg = data.get(adxNeg) as any;
+        if (aLine && aPos && aNeg) {
+          updateLegend(adxLegendRef, `
+            <div class="flex gap-2 text-amber-500">
+              <span>ADX(14): ${aLine.value.toFixed(2)}</span>
+              <span class="text-emerald-500">+DI: ${aPos.value.toFixed(2)}</span>
+              <span class="text-rose-500">-DI: ${aNeg.value.toFixed(2)}</span>
+            </div>
+          `);
+        }
+
         isCrosshairSyncing = false;
       });
     });
@@ -216,6 +281,35 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
           });
 
           setLoading(false);
+
+          // Update legends with the last available data point
+          const lastData = data[data.length - 1];
+          if (lastData) {
+            if (mainLegendRef.current) mainLegendRef.current.innerHTML = `
+              <div class="flex gap-3 text-[11px] font-mono">
+                <span class="text-zinc-100 font-bold">${symbol}</span>
+                <span class="text-zinc-400">O: <span class="${lastData.close >= lastData.open ? 'text-emerald-500' : 'text-rose-500'}">${lastData.open.toFixed(2)}</span></span>
+                <span class="text-zinc-400">H: <span class="text-emerald-500">${lastData.high.toFixed(2)}</span></span>
+                <span class="text-zinc-400">L: <span class="text-rose-500">${lastData.low.toFixed(2)}</span></span>
+                <span class="text-zinc-400">C: <span class="${lastData.close >= lastData.open ? 'text-emerald-500' : 'text-rose-500'}">${lastData.close.toFixed(2)}</span></span>
+              </div>
+            `;
+            if (rsiLegendRef.current && lastData.rsi) rsiLegendRef.current.innerHTML = `<span class="text-purple-400">RSI(14): ${lastData.rsi.toFixed(2)}</span>`;
+            if (macdLegendRef.current && lastData.macd) macdLegendRef.current.innerHTML = `
+              <div class="flex gap-2 text-blue-400">
+                <span>MACD: ${lastData.macd.toFixed(2)}</span>
+                <span class="text-amber-500">Signal: ${lastData.macd_signal?.toFixed(2)}</span>
+                <span class="${lastData.macd_hist >= 0 ? 'text-emerald-500' : 'text-rose-500'}">Hist: ${lastData.macd_hist?.toFixed(2)}</span>
+              </div>
+            `;
+            if (adxLegendRef.current && lastData.adx) adxLegendRef.current.innerHTML = `
+              <div class="flex gap-2 text-amber-500">
+                <span>ADX(14): ${lastData.adx.toFixed(2)}</span>
+                <span class="text-emerald-500">+DI: ${lastData.adx_pos?.toFixed(2)}</span>
+                <span class="text-rose-500">-DI: ${lastData.adx_neg?.toFixed(2)}</span>
+              </div>
+            `;
+          }
 
           // Connect WS for live price updates
           const stream = symbol.toLowerCase().replace('/', '');
@@ -288,6 +382,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
       {/* Main Candle Chart */}
       <div className="w-full relative" style={{ height: `${panelPcts[0]}%` }}>
+        <div ref={mainLegendRef} className="absolute top-2 left-2 z-20 pointer-events-none" />
         <div ref={mainRef} className="absolute inset-0" />
       </div>
 
@@ -295,7 +390,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
       {/* RSI */}
       <div className="w-full relative" style={{ height: `${panelPcts[1]}%` }}>
-        <span className="absolute top-1 left-2 z-10 text-[10px] font-mono text-purple-400 pointer-events-none">RSI (14)</span>
+        <div ref={rsiLegendRef} className="absolute top-1 left-2 z-10 text-[10px] font-mono pointer-events-none">RSI (14)</div>
         <div ref={rsiRef} className="absolute inset-0" />
       </div>
 
@@ -303,7 +398,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
       {/* MACD */}
       <div className="w-full relative" style={{ height: `${panelPcts[2]}%` }}>
-        <span className="absolute top-1 left-2 z-10 text-[10px] font-mono text-blue-400 pointer-events-none">MACD</span>
+        <div ref={macdLegendRef} className="absolute top-1 left-2 z-10 text-[10px] font-mono pointer-events-none">MACD</div>
         <div ref={macdRef} className="absolute inset-0" />
       </div>
 
@@ -311,7 +406,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
       {/* ADX */}
       <div className="w-full relative" style={{ height: `${panelPcts[3]}%` }}>
-        <span className="absolute top-1 left-2 z-10 text-[10px] font-mono text-amber-500 pointer-events-none">ADX (14)</span>
+        <div ref={adxLegendRef} className="absolute top-1 left-2 z-10 text-[10px] font-mono pointer-events-none">ADX (14)</div>
         <div ref={adxRef} className="absolute inset-0" />
       </div>
     </div>

@@ -59,7 +59,9 @@ async def get_klines_with_indicators(
     limit: int = Query(200, ge=1, le=1000)
 ):
     """Get historical OHLCV data enriched with all technical indicators."""
-    klines = await market_data_engine.get_historical_ohlcv(symbol, timeframe, limit)
+    # Fetch 100 extra candles to account for indicator warm-up (MACD=26, EMA200=200 etc)
+    fetch_limit = limit + 100
+    klines = await market_data_engine.get_historical_ohlcv(symbol, timeframe, fetch_limit)
     if not klines:
         return []
         
@@ -78,10 +80,25 @@ async def get_klines_with_indicators(
             from app.market.market_data_manager import market_data_engine as mde
             binance = mde.provider_manager.providers.get("binance")
             if binance:
-                bin_klines = await binance.fetch_ohlcv(symbol, timeframe, limit)
+                # Fetch volume with the same increased limit
+                bin_klines = await binance.fetch_ohlcv(symbol, timeframe, fetch_limit)
                 if bin_klines:
-                    vol_map = {k.time: k.volume for k in bin_klines}
-                    df['volume'] = df['time'].map(vol_map).fillna(0.0)
+                    vol_df = pd.DataFrame([{
+                        "time": k.time,
+                        "volume_bin": k.volume
+                    } for k in bin_klines])
+                    
+                    # Sort both for merge_asof
+                    df = df.sort_values("time")
+                    vol_df = vol_df.sort_values("time")
+                    
+                    # Merge using nearest timestamp within a reasonable window (e.g., 5 mins)
+                    # This handles slight differences in how providers timestamp the same candle
+                    df = pd.merge_asof(
+                        df, vol_df, on="time", direction="nearest", tolerance=300
+                    )
+                    df['volume'] = df['volume_bin'].fillna(0.0)
+                    df = df.drop(columns=['volume_bin'])
         except Exception:
             pass  # Volume stays 0 if Binance fails
     
