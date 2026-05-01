@@ -182,14 +182,29 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
         
         // Main Chart Legend
         const candleData = data.get(candleSeries) as any;
+        const e20 = data.get(ema20) as any;
+        const e50 = data.get(ema50) as any;
+        const e200 = data.get(ema200) as any;
+        const bH = data.get(bbHigh) as any;
+        const bL = data.get(bbLow) as any;
+
         if (candleData) {
           updateLegend(mainLegendRef, `
-            <div class="flex gap-3 text-[11px] font-mono">
-              <span class="text-zinc-100 font-bold">${symbol}</span>
-              <span class="text-zinc-400">O: <span class="${candleData.close >= candleData.open ? 'text-emerald-500' : 'text-rose-500'}">${candleData.open.toFixed(2)}</span></span>
-              <span class="text-zinc-400">H: <span class="text-emerald-500">${candleData.high.toFixed(2)}</span></span>
-              <span class="text-zinc-400">L: <span class="text-rose-500">${candleData.low.toFixed(2)}</span></span>
-              <span class="text-zinc-400">C: <span class="${candleData.close >= candleData.open ? 'text-emerald-500' : 'text-rose-500'}">${candleData.close.toFixed(2)}</span></span>
+            <div class="flex flex-col gap-0.5">
+              <div class="flex gap-3 text-[11px] font-mono">
+                <span class="text-zinc-100 font-bold">${symbol}</span>
+                <span class="text-zinc-400">O: <span class="${candleData.close >= candleData.open ? 'text-emerald-500' : 'text-rose-500'}">${candleData.open.toFixed(2)}</span></span>
+                <span class="text-zinc-400">H: <span class="text-emerald-500">${candleData.high.toFixed(2)}</span></span>
+                <span class="text-zinc-400">L: <span class="text-rose-500">${candleData.low.toFixed(2)}</span></span>
+                <span class="text-zinc-400">C: <span class="${candleData.close >= candleData.open ? 'text-emerald-500' : 'text-rose-500'}">${candleData.close.toFixed(2)}</span></span>
+              </div>
+              <div class="flex gap-3 text-[10px] font-mono">
+                ${e20 ? `<span class="text-blue-400">EMA20: ${e20.value.toFixed(2)}</span>` : ''}
+                ${e50 ? `<span class="text-amber-500">EMA50: ${e50.value.toFixed(2)}</span>` : ''}
+                ${e200 ? `<span class="text-rose-500">EMA200: ${e200.value.toFixed(2)}</span>` : ''}
+                ${bH ? `<span class="text-zinc-500">BB High: ${bH.value.toFixed(2)}</span>` : ''}
+                ${bL ? `<span class="text-zinc-500">BB Low: ${bL.value.toFixed(2)}</span>` : ''}
+              </div>
             </div>
           `);
         }
@@ -286,12 +301,21 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
           const lastData = data[data.length - 1];
           if (lastData) {
             if (mainLegendRef.current) mainLegendRef.current.innerHTML = `
-              <div class="flex gap-3 text-[11px] font-mono">
-                <span class="text-zinc-100 font-bold">${symbol}</span>
-                <span class="text-zinc-400">O: <span class="${lastData.close >= lastData.open ? 'text-emerald-500' : 'text-rose-500'}">${lastData.open.toFixed(2)}</span></span>
-                <span class="text-zinc-400">H: <span class="text-emerald-500">${lastData.high.toFixed(2)}</span></span>
-                <span class="text-zinc-400">L: <span class="text-rose-500">${lastData.low.toFixed(2)}</span></span>
-                <span class="text-zinc-400">C: <span class="${lastData.close >= lastData.open ? 'text-emerald-500' : 'text-rose-500'}">${lastData.close.toFixed(2)}</span></span>
+              <div class="flex flex-col gap-0.5">
+                <div class="flex gap-3 text-[11px] font-mono">
+                  <span class="text-zinc-100 font-bold">${symbol}</span>
+                  <span class="text-zinc-400">O: <span class="${lastData.close >= lastData.open ? 'text-emerald-500' : 'text-rose-500'}">${lastData.open.toFixed(2)}</span></span>
+                  <span class="text-zinc-400">H: <span class="text-emerald-500">${lastData.high.toFixed(2)}</span></span>
+                  <span class="text-zinc-400">L: <span class="text-rose-500">${lastData.low.toFixed(2)}</span></span>
+                  <span class="text-zinc-400">C: <span class="${lastData.close >= lastData.open ? 'text-emerald-500' : 'text-rose-500'}">${lastData.close.toFixed(2)}</span></span>
+                </div>
+                <div class="flex gap-3 text-[10px] font-mono">
+                  ${lastData.ema_20 ? `<span class="text-blue-400">EMA20: ${lastData.ema_20.toFixed(2)}</span>` : ''}
+                  ${lastData.ema_50 ? `<span class="text-amber-500">EMA50: ${lastData.ema_50.toFixed(2)}</span>` : ''}
+                  ${lastData.ema_200 ? `<span class="text-rose-500">EMA200: ${lastData.ema_200.toFixed(2)}</span>` : ''}
+                  ${lastData.bb_high ? `<span class="text-zinc-500">BB High: ${lastData.bb_high.toFixed(2)}</span>` : ''}
+                  ${lastData.bb_low ? `<span class="text-zinc-500">BB Low: ${lastData.bb_low.toFixed(2)}</span>` : ''}
+                </div>
               </div>
             `;
             if (rsiLegendRef.current && lastData.rsi) rsiLegendRef.current.innerHTML = `<span class="text-purple-400">RSI(14): ${lastData.rsi.toFixed(2)}</span>`;
