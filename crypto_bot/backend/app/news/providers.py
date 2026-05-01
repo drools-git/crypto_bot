@@ -14,7 +14,11 @@ class RSSNewsProvider:
     async def fetch_latest_news(self, limit: int = 10) -> List[NewsArticle]:
         try:
             # feedparser runs synchronously, offload to thread to avoid blocking event loop
-            feed = await asyncio.to_thread(feedparser.parse, self.rss_url)
+            import urllib.request
+            req = urllib.request.Request(self.rss_url, headers={'User-Agent': 'CryptoBot/1.0'})
+            feed = await asyncio.to_thread(
+                lambda: feedparser.parse(urllib.request.urlopen(req, timeout=5).read())
+            )
             
             articles = []
             for entry in feed.entries[:limit]:
