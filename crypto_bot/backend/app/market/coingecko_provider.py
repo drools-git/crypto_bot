@@ -22,15 +22,14 @@ class CoinGeckoProvider(BaseProvider):
     async def _fetch_ohlcv_impl(self, symbol: str, timeframe: str, limit: int) -> List[OHLCV]:
         coin_id = self._get_coin_id(symbol)
         # CoinGecko uses days: 1/7/14/30/90/365/max
-        # Need enough data for indicators (EMA200 needs 200+ candles)
-        # CoinGecko returns: 1-2 days -> 30min, 3-30 days -> 4h, 31+ days -> 4h/daily
-        days = "90"  # Default: enough data for EMA200
+        # days=30 returns ~180 candles at 4h intervals (enough for most indicators)
+        days = "30"
         if timeframe == "1d":
             days = "365"
         elif timeframe == "4h":
             days = "90"
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(
                 f"{self.base_url}/coins/{coin_id}/ohlc",
                 params={"vs_currency": "usd", "days": days}

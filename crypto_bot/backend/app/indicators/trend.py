@@ -5,8 +5,8 @@ from app.indicators.base import BaseIndicator
 
 class TrendIndicators(BaseIndicator):
     def calculate(self, df: pd.DataFrame) -> pd.DataFrame:
-        if len(df) < 200:
-            return df # Need enough data
+        if len(df) < 20:
+            return df  # Need at least some data
             
         # EMAs
         df['ema_20'] = EMAIndicator(close=df['close'], window=20).ema_indicator()
