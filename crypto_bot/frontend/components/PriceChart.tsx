@@ -89,7 +89,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
       layout: { background: { type: ColorType.Solid, color: '#000000' }, textColor: '#9ca3af' },
       grid: { vertLines: { color: 'rgba(255, 255, 255, 0.03)' }, horzLines: { color: 'rgba(255, 255, 255, 0.03)' } },
       crosshair: { mode: CrosshairMode.Normal },
-      timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', timeVisible: true },
+      timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', timeVisible: true, rightOffset: 3, shiftVisibleRangeOnNewBar: true },
       rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' }
     };
 
@@ -189,17 +189,17 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
           let lastCandleTime = candles[candles.length - 1].time;
 
-          // Fit main chart first, then force-sync sub-charts to the same range
+          // Fit main chart and force-sync all sub-charts to the exact same view
           mainChart.timeScale().fitContent();
-          // Small delay to let main chart settle before syncing
-          setTimeout(() => {
+          // Use requestAnimationFrame to ensure main chart has rendered before syncing
+          requestAnimationFrame(() => {
             const range = mainChart.timeScale().getVisibleLogicalRange();
             if (range) {
               [rsiChart, macdChart, adxChart].forEach(c => {
                 try { c.timeScale().setVisibleLogicalRange(range); } catch(_) {}
               });
             }
-          }, 50);
+          });
 
           setLoading(false);
 
