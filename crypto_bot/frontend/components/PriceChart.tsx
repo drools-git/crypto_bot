@@ -252,7 +252,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     const fetchData = async () => {
       try {
         const host = window.location.hostname || 'localhost';
-        const response = await fetch(`http://${host}:8000/api/v1/market/indicators?symbol=${symbol}&timeframe=1h&limit=500`);
+        const response = await fetch(`http://${host}:8000/api/v1/market/indicators?symbol=${symbol}&timeframe=1h&limit=1000`);
         const data = await response.json();
 
         if (Array.isArray(data) && data.length > 0) {

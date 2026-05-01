@@ -19,13 +19,13 @@ class ProviderManager:
         }
 
     async def fetch_ohlcv(self, symbol: str, timeframe: str, limit: int = 100) -> List[OHLCV]:
-        """Fetch OHLCV primarily from CoinGecko, fallback to Binance on failure."""
+        """Fetch OHLCV primarily from Binance for high granularity, fallback to CoinGecko."""
         try:
-            logger.info(f"Attempting to fetch OHLCV for {symbol} from CoinGecko")
-            return await self.coingecko.fetch_ohlcv(symbol, timeframe, limit)
-        except Exception as e:
-            logger.warning(f"CoinGecko OHLCV failed ({e}), falling back to Binance")
+            logger.info(f"Attempting to fetch OHLCV for {symbol} from Binance")
             return await self.binance.fetch_ohlcv(symbol, timeframe, limit)
+        except Exception as e:
+            logger.warning(f"Binance OHLCV failed ({e}), falling back to CoinGecko")
+            return await self.coingecko.fetch_ohlcv(symbol, timeframe, limit)
 
     async def fetch_ticker(self, symbol: str) -> Optional[Ticker]:
         """Fetch ticker primarily from Binance for execution accuracy."""
