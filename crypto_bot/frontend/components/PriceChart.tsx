@@ -93,11 +93,9 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
       rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' }
     };
 
-    // Sub-panel options: hide redundant time axis labels on RSI/MACD, show only on ADX (bottom)
-    const subOptions = (showTime: boolean) => ({
-      ...commonOptions,
-      timeScale: { ...commonOptions.timeScale, visible: showTime },
-    });
+    // All charts share time axis visibility for alignment
+    // Main chart hides time labels (shown on bottom ADX), sub-panels show them
+    const noTimeLabels = { ...commonOptions, timeScale: { ...commonOptions.timeScale, visible: true, tickMarkFormatter: () => '' } };
 
     // 1. Main Chart
     const mainChart = createChart(mainRef.current, { ...commonOptions, height: mainRef.current.clientHeight });
@@ -113,23 +111,23 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     const bbHigh = mainChart.addSeries(LineSeries, { color: '#6b7280', lineWidth: 1, lineStyle: 3, crosshairMarkerVisible: false });
     const bbLow = mainChart.addSeries(LineSeries, { color: '#6b7280', lineWidth: 1, lineStyle: 3, crosshairMarkerVisible: false });
 
-    // 2. RSI Chart — autoScale ON, scaleMargins tight
-    const rsiChart = createChart(rsiRef.current, { ...subOptions(false), height: rsiRef.current.clientHeight });
-    const rsiSeries = rsiChart.addSeries(LineSeries, { color: '#a855f7', lineWidth: 1 });
+    // 2. RSI Chart
+    const rsiChart = createChart(rsiRef.current, { ...noTimeLabels, height: rsiRef.current.clientHeight });
+    const rsiSeries = rsiChart.addSeries(LineSeries, { color: '#a855f7', lineWidth: 1, crosshairMarkerVisible: true });
     rsiChart.priceScale('right').applyOptions({ autoScale: true, scaleMargins: { top: 0.05, bottom: 0.05 } });
 
     // 3. MACD Chart
-    const macdChart = createChart(macdRef.current, { ...subOptions(false), height: macdRef.current.clientHeight });
-    const macdLine = macdChart.addSeries(LineSeries, { color: '#3b82f6', lineWidth: 1 });
-    const macdSignal = macdChart.addSeries(LineSeries, { color: '#f59e0b', lineWidth: 1 });
+    const macdChart = createChart(macdRef.current, { ...noTimeLabels, height: macdRef.current.clientHeight });
+    const macdLine = macdChart.addSeries(LineSeries, { color: '#3b82f6', lineWidth: 1, crosshairMarkerVisible: true });
+    const macdSignal = macdChart.addSeries(LineSeries, { color: '#f59e0b', lineWidth: 1, crosshairMarkerVisible: true });
     const macdHist = macdChart.addSeries(HistogramSeries, { color: '#64748b' });
     macdChart.priceScale('right').applyOptions({ autoScale: true, scaleMargins: { top: 0.05, bottom: 0.05 } });
 
-    // 4. ADX Chart (bottom — show time axis)
-    const adxChart = createChart(adxRef.current, { ...subOptions(true), height: adxRef.current.clientHeight });
-    const adxLine = adxChart.addSeries(LineSeries, { color: '#f59e0b', lineWidth: 2 });
-    const adxPos = adxChart.addSeries(LineSeries, { color: '#10b981', lineWidth: 1, lineStyle: 2 });
-    const adxNeg = adxChart.addSeries(LineSeries, { color: '#ef4444', lineWidth: 1, lineStyle: 2 });
+    // 4. ADX Chart (bottom — full time axis with labels)
+    const adxChart = createChart(adxRef.current, { ...commonOptions, height: adxRef.current.clientHeight });
+    const adxLine = adxChart.addSeries(LineSeries, { color: '#f59e0b', lineWidth: 2, crosshairMarkerVisible: true });
+    const adxPos = adxChart.addSeries(LineSeries, { color: '#10b981', lineWidth: 1, lineStyle: 2, crosshairMarkerVisible: true });
+    const adxNeg = adxChart.addSeries(LineSeries, { color: '#ef4444', lineWidth: 1, lineStyle: 2, crosshairMarkerVisible: true });
     adxChart.priceScale('right').applyOptions({ autoScale: true, scaleMargins: { top: 0.05, bottom: 0.05 } });
 
     // Store refs for resize
@@ -152,6 +150,22 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     syncCharts(rsiChart, [mainChart, macdChart, adxChart]);
     syncCharts(macdChart, [mainChart, rsiChart, adxChart]);
     syncCharts(adxChart, [mainChart, rsiChart, macdChart]);
+
+    // Sync crosshair across all charts
+    const allCharts = [mainChart, rsiChart, macdChart, adxChart];
+    let isCrosshairSyncing = false;
+    allCharts.forEach((source) => {
+      source.subscribeCrosshairMove((param) => {
+        if (isCrosshairSyncing) return;
+        isCrosshairSyncing = true;
+        allCharts.forEach((target) => {
+          if (target !== source && param.time) {
+            target.setCrosshairPosition(NaN, param.time, target.options().rightPriceScale ? (target as any)._private__seriesMap?.values()?.next()?.value : undefined);
+          }
+        });
+        isCrosshairSyncing = false;
+      });
+    });
 
     let ws: WebSocket;
 
