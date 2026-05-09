@@ -11,13 +11,14 @@ Endpoints:
   GET  /strategies/consensus     — run all and return aggregated consensus
 """
 from fastapi import APIRouter, HTTPException, Query, Body
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import numpy as np
 
 from app.strategies.manager import strategy_manager
 from app.strategies.models import Signal
+from app.strategies.strategy_logger import strategy_logger
 from app.market.market_data_manager import market_data_engine
 from app.indicators.engine import indicator_engine
 
@@ -111,3 +112,38 @@ def update_params(
         return strats[strategy_id]
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Strategy '{strategy_id}' not found.")
+
+
+@router.get("/log-config", summary="Get current strategy logging configuration")
+def get_log_config() -> Dict[str, Any]:
+    return {
+        "enabled":             strategy_logger.enabled,
+        "verbose":             strategy_logger.verbose,
+        "per_strategy_files":  strategy_logger.per_strategy_files,
+        "log_directory":       str(strategy_logger.__class__.__module__),
+    }
+
+
+@router.post("/log-config", summary="Update strategy logging configuration at runtime")
+def set_log_config(
+    enabled:            Optional[bool] = Body(None),
+    verbose:            Optional[bool] = Body(None),
+    per_strategy_files: Optional[bool] = Body(None),
+) -> Dict[str, Any]:
+    """
+    Toggle logging on/off or switch verbose mode without restarting the server.
+
+    Body (all fields optional):
+    {
+        "enabled": true,       // master switch
+        "verbose": false,      // include full indicator snapshot per signal
+        "per_strategy_files": true  // write individual strategy log files
+    }
+    """
+    if enabled is not None:
+        strategy_logger.enabled = enabled
+    if verbose is not None:
+        strategy_logger.verbose = verbose
+    if per_strategy_files is not None:
+        strategy_logger.per_strategy_files = per_strategy_files
+    return get_log_config()

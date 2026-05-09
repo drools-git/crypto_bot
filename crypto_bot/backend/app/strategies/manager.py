@@ -13,6 +13,7 @@ from loguru import logger
 
 from app.strategies.models import Signal, SignalType, StrategyConfig
 from app.strategies.registry import registry
+from app.strategies.strategy_logger import strategy_logger
 
 # Force registration of all built-in strategies
 import app.strategies.trend_following      # noqa: F401
@@ -77,31 +78,35 @@ class StrategyManager:
     ) -> List[Signal]:
         """
         Run every enabled strategy against the enriched DataFrame.
-
-        Args:
-            df: Indicator-enriched OHLCV DataFrame (from IndicatorEngine).
-            symbol: e.g. "BTC/USDT"
-            timeframe: e.g. "1h"
-
-        Returns:
-            List of Signal objects, one per enabled strategy.
         """
         signals: List[Signal] = []
+        enabled_ids = [sid for sid, s in self._instances.items() if s.enabled]
+
+        strategy_logger.log_run_start(
+            symbol=symbol,
+            timeframe=timeframe,
+            n_candles=len(df),
+            strategies=enabled_ids,
+        )
+
+        # Last candle snapshot for verbose logging
+        snapshot = df.iloc[-1].to_dict() if len(df) > 0 else {}
 
         for sid, strategy in self._instances.items():
             if not strategy.enabled:
                 logger.debug(f"[StrategyManager] Skipping disabled strategy '{sid}'")
                 continue
             try:
-                # Inject context into metadata before analyze
                 strategy._metadata["symbol"]    = symbol
                 strategy._metadata["timeframe"] = timeframe
                 strategy.analyze(df)
                 signal = strategy.generate_signal()
-                # Ensure symbol/timeframe are on the signal
                 signal.symbol    = symbol
                 signal.timeframe = timeframe
                 signals.append(signal)
+
+                strategy_logger.log_signal(signal, indicator_snapshot=snapshot)
+
                 logger.debug(
                     f"[{sid}] {signal.signal} | conf={signal.confidence:.2f} | {signal.reasoning[:80]}"
                 )
@@ -112,8 +117,7 @@ class StrategyManager:
 
     def get_consensus(self, signals: List[Signal]) -> Dict[str, Any]:
         """
-        Aggregate signals from all strategies into a simple consensus.
-        Returns: direction, avg_confidence, vote_breakdown, dominant_signal
+        Aggregate signals from all strategies into a weighted consensus.
         """
         if not signals:
             return {"direction": SignalType.HOLD, "confidence": 0.0, "votes": {}, "signals": []}
@@ -123,16 +127,18 @@ class StrategyManager:
             votes[sig.signal.value] += sig.confidence
 
         dominant = max(votes, key=lambda k: votes[k])
-        total    = sum(votes.values()) or 1.0
         avg_conf = votes[dominant] / len(signals)
 
-        return {
-            "direction":   dominant,
-            "confidence":  round(avg_conf, 4),
-            "votes":       {k: round(v, 4) for k, v in votes.items()},
-            "n_signals":   len(signals),
-            "signals":     [s.model_dump() for s in signals],
+        result = {
+            "direction":  dominant,
+            "confidence": round(avg_conf, 4),
+            "votes":      {k: round(v, 4) for k, v in votes.items()},
+            "n_signals":  len(signals),
+            "signals":    [s.model_dump() for s in signals],
         }
+
+        strategy_logger.log_consensus(result)
+        return result
 
     # ------------------------------------------------------------------ #
     #  Private                                                             #
