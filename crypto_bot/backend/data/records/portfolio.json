@@ -1,0 +1,21 @@
+{
+  "balance": 89990.0,
+  "positions": {
+    "BTC/USDT": {
+      "id": "63a895f2",
+      "symbol": "BTC/USDT",
+      "side": "LONG",
+      "entry_price": 80727.873765,
+      "size_base": 0.12387295160417756,
+      "cost": 10000.0,
+      "timestamp": "2026-05-09T23:49:40.226217+00:00"
+    }
+  },
+  "equity_curve": [
+    {
+      "timestamp": "2026-05-09T23:49:40.226217+00:00",
+      "equity": 100000.0
+    }
+  ],
+  "last_updated": "2026-05-09T23:49:40.227210+00:00"
+}

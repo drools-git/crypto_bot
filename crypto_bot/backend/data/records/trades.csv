@@ -1,0 +1,2 @@
+trade_id,timestamp,symbol,side,type,price,size_base,size_quote,fee,realized_pnl,reasoning
+63a895f2,2026-05-09T23:49:40.226217+00:00,BTC/USDT,LONG,MARKET_OPEN,80727.873765,0.12387295160417756,10000.0,10.0,0.0,Order Flow Confirmation

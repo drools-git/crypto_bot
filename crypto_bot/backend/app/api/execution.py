@@ -4,7 +4,7 @@ from app.execution.signal_engine import signal_engine
 from app.execution.paper_trading import paper_trading_engine
 from app.market.market_data_manager import market_data_engine
 
-router = APIRouter(tags=["Execution"])
+router = APIRouter(prefix="/execution", tags=["Execution"])
 
 @router.get("/signals/history", summary="Get official signal history and quality")
 async def get_signal_history() -> List[Dict[str, Any]]:
