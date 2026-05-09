@@ -37,7 +37,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
   const rsiRef = useRef<HTMLDivElement>(null);
   const macdRef = useRef<HTMLDivElement>(null);
   const adxRef = useRef<HTMLDivElement>(null);
-  
+
   // Legend refs
   const mainLegendRef = useRef<HTMLDivElement>(null);
   const rsiLegendRef = useRef<HTMLDivElement>(null);
@@ -114,8 +114,8 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     const ema50 = mainChart.addSeries(LineSeries, { color: '#eab308', lineWidth: 1, crosshairMarkerVisible: false });
     const ema200 = mainChart.addSeries(LineSeries, { color: '#ef4444', lineWidth: 2, crosshairMarkerVisible: false });
     const vwap = mainChart.addSeries(LineSeries, { color: '#a855f7', lineWidth: 1, lineStyle: 2, crosshairMarkerVisible: false });
-    const bbHigh = mainChart.addSeries(LineSeries, { color: '#6b7280', lineWidth: 1, lineStyle: 3, crosshairMarkerVisible: false });
-    const bbLow = mainChart.addSeries(LineSeries, { color: '#6b7280', lineWidth: 1, lineStyle: 3, crosshairMarkerVisible: false });
+    const bbHigh = mainChart.addSeries(LineSeries, { color: '#6b7280', lineWidth: 2, lineStyle: 2, crosshairMarkerVisible: false });
+    const bbLow = mainChart.addSeries(LineSeries, { color: '#6b7280', lineWidth: 2, lineStyle: 2, crosshairMarkerVisible: false });
 
     // 2. RSI Chart
     const rsiChart = createChart(rsiRef.current, { ...noTimeLabels, height: rsiRef.current.clientHeight });
@@ -146,7 +146,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
         if (range && !isSyncing) {
           isSyncing = true;
           targets.forEach(t => {
-            try { t.timeScale().setVisibleLogicalRange(range); } catch (_) {}
+            try { t.timeScale().setVisibleLogicalRange(range); } catch (_) { }
           });
           isSyncing = false;
         }
@@ -160,12 +160,12 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     // Sync crosshair across all charts and update legends
     const allCharts = [mainChart, rsiChart, macdChart, adxChart];
     let isCrosshairSyncing = false;
-    
+
     allCharts.forEach((source) => {
       source.subscribeCrosshairMove((param) => {
         if (isCrosshairSyncing) return;
         isCrosshairSyncing = true;
-        
+
         // 1. Sync positions
         allCharts.forEach((target) => {
           if (target !== source && param.time) {
@@ -179,7 +179,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
         };
 
         const data = param.seriesData;
-        
+
         // Main Chart Legend
         const candleData = data.get(candleSeries) as any;
         const e20 = data.get(ema20) as any;
@@ -290,7 +290,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
             const range = mainChart.timeScale().getVisibleLogicalRange();
             if (range) {
               [rsiChart, macdChart, adxChart].forEach(c => {
-                try { c.timeScale().setVisibleLogicalRange(range); } catch(_) {}
+                try { c.timeScale().setVisibleLogicalRange(range); } catch (_) { }
               });
             }
           });

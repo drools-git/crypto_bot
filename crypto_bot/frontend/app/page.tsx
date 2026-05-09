@@ -6,6 +6,7 @@ import { OrderBook } from "@/components/OrderBook";
 import { TradeTape } from "@/components/TradeTape";
 import { NewsFeed } from "@/components/NewsFeed";
 import { Activity, Settings } from "lucide-react";
+import { ActiveSignals } from "@/components/ActiveSignals";
 
 export default function TerminalDashboard() {
   return (
@@ -57,10 +58,8 @@ export default function TerminalDashboard() {
             </div>
           </PanelSection>
           
-          <PanelSection title="ACTIVE SIGNALS">
-            <div className="text-xs text-zinc-500 font-mono py-2 flex items-center justify-center h-full opacity-50">
-              No active signals
-            </div>
+          <PanelSection title="ACTIVE SIGNALS" flex>
+            <ActiveSignals symbol="BTC/USDT" />
           </PanelSection>
           
           <PanelSection title="MARKET INTELLIGENCE" flex>
