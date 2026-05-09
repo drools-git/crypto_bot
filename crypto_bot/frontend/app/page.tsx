@@ -7,6 +7,7 @@ import { TradeTape } from "@/components/TradeTape";
 import { NewsFeed } from "@/components/NewsFeed";
 import { Activity, Settings } from "lucide-react";
 import { ActiveSignals } from "@/components/ActiveSignals";
+import { SignalHistory } from "@/components/SignalHistory";
 
 export default function TerminalDashboard() {
   return (
@@ -171,8 +172,8 @@ function BottomPanel() {
           <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">RECENT TRADES</span>
           </div>
-          <div className="p-4 text-xs text-zinc-600 font-mono flex items-center justify-center h-full opacity-50">
-            No execution history
+          <div className="flex-1 overflow-hidden">
+            <SignalHistory />
           </div>
         </div>
 

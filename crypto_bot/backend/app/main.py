@@ -6,6 +6,7 @@ from app.core.logging_config import setup_logging
 from app.api.market import router as market_router
 from app.api.news import router as news_router
 from app.api.strategies import router as strategies_router
+from app.api.execution import router as execution_router
 from loguru import logger
 
 # Initialize global logging
@@ -21,6 +22,7 @@ app = FastAPI(
 app.include_router(market_router, prefix=settings.API_V1_STR)
 app.include_router(news_router, prefix=settings.API_V1_STR)
 app.include_router(strategies_router, prefix=settings.API_V1_STR)
+app.include_router(execution_router, prefix=settings.API_V1_STR)
 
 # Configure CORS for local Next.js instance
 if settings.BACKEND_CORS_ORIGINS:
@@ -33,15 +35,18 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 from app.market.stream_services import start_market_streams, stop_market_streams
+from app.execution.signal_engine import signal_engine
 
 @app.on_event("startup")
 async def startup_event():
     logger.info(f"Starting up {settings.PROJECT_NAME} backend...")
     await start_market_streams()
+    await signal_engine.start()
 
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info(f"Shutting down {settings.PROJECT_NAME} backend...")
+    await signal_engine.stop()
     await stop_market_streams()
 
 @app.get("/health")
