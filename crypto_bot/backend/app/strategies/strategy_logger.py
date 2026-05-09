@@ -49,7 +49,7 @@ def _ts() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 def _write(path: str, text: str):
-    """Append directly to file — avoids loguru filter complexity."""
+    """Append directly to file with explicit UTF-8 encoding."""
     with open(path, "a", encoding="utf-8") as f:
         f.write(text + "\n")
 

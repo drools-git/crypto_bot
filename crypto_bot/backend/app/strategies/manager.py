@@ -117,7 +117,8 @@ class StrategyManager:
 
     def get_consensus(self, signals: List[Signal]) -> Dict[str, Any]:
         """
-        Aggregate signals from all strategies into a weighted consensus.
+        Aggregate signals. Confidence is averaged only over strategies that
+        actually produced a signal (confidence > 0), so silent HOLDs don't dilute active signals.
         """
         if not signals:
             return {"direction": SignalType.HOLD, "confidence": 0.0, "votes": {}, "signals": []}
@@ -127,14 +128,23 @@ class StrategyManager:
             votes[sig.signal.value] += sig.confidence
 
         dominant = max(votes, key=lambda k: votes[k])
-        avg_conf = votes[dominant] / len(signals)
+
+        # Only average over strategies that have a non-zero confidence (they spoke)
+        active = [s for s in signals if s.confidence > 0]
+        active_for_dominant = [s for s in active if s.signal.value == dominant]
+
+        if active_for_dominant:
+            avg_conf = sum(s.confidence for s in active_for_dominant) / len(active_for_dominant)
+        else:
+            avg_conf = 0.0
 
         result = {
-            "direction":  dominant,
-            "confidence": round(avg_conf, 4),
-            "votes":      {k: round(v, 4) for k, v in votes.items()},
-            "n_signals":  len(signals),
-            "signals":    [s.model_dump() for s in signals],
+            "direction":       dominant,
+            "confidence":      round(avg_conf, 4),
+            "votes":           {k: round(v, 4) for k, v in votes.items()},
+            "n_signals":       len(signals),
+            "n_active":        len(active),
+            "signals":         [s.model_dump() for s in signals],
         }
 
         strategy_logger.log_consensus(result)

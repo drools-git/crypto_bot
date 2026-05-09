@@ -82,25 +82,32 @@ class MeanReversionStrategy(BaseStrategy):
 
         # LONG: oversold + at lower band
         if near_low and rsi < oversold:
-            rsi_dist = (oversold - rsi) / oversold          # 0→1 as RSI drops
+            rsi_dist = (oversold - rsi) / oversold
             self._last_signal = SignalType.LONG
-            self._confidence  = min(1.0, 0.45 + rsi_dist * 0.55)
+            self._confidence  = min(0.85, 0.45 + rsi_dist * 0.40)  # cap 85%
             self._reasoning   = (
-                f"Oversold: RSI={rsi:.1f} < {oversold}, price {price:.2f} near BB Low {bb_low:.2f}"
+                f"Sobrevendido: RSI={rsi:.1f} < {oversold}, precio {price:.2f} cerca de BB Low {bb_low:.2f}"
             )
-        # SHORT: overbought + at upper band
         elif near_high and rsi > overbought:
             rsi_dist = (rsi - overbought) / (100 - overbought)
             self._last_signal = SignalType.SHORT
-            self._confidence  = min(1.0, 0.45 + rsi_dist * 0.55)
+            self._confidence  = min(0.85, 0.45 + rsi_dist * 0.40)  # cap 85%
             self._reasoning   = (
-                f"Overbought: RSI={rsi:.1f} > {overbought}, price {price:.2f} near BB High {bb_high:.2f}"
+                f"Sobrecomprado: RSI={rsi:.1f} > {overbought}, precio {price:.2f} cerca de BB High {bb_high:.2f}"
             )
         else:
+            # HOLD — report proximity: how close RSI is to its threshold, and price to the band
+            rsi_to_low  = max(0.0, (rsi - oversold) / (50 - oversold))   # 1=at oversold, 0=at 50
+            rsi_to_high = max(0.0, (overbought - rsi) / (overbought - 50))
+            rsi_prox    = 1.0 - min(rsi_to_low, rsi_to_high)              # 0=neutral, 1=at edge
+            bb_pos      = (price - bb_low) / (bb_high - bb_low) if bb_high != bb_low else 0.5
+            bb_prox     = abs(bb_pos - 0.5) * 2  # 0=center, 1=at band edge
+            proximity   = (rsi_prox + bb_prox) / 2
             self._last_signal = SignalType.HOLD
-            self._confidence  = 0.0
+            self._confidence  = round(proximity * 0.38, 3)  # max ~38%
             self._reasoning   = (
-                f"Price inside bands: BB=[{bb_low:.2f}, {bb_high:.2f}], RSI={rsi:.1f}"
+                f"Precio dentro de bandas: BB=[{bb_low:.2f}, {bb_high:.2f}], RSI={rsi:.1f} "
+                f"(pos={bb_pos*100:.0f}% del ancho, prox. al borde={bb_prox*100:.0f}%)"
             )
 
     def generate_signal(self) -> Signal:

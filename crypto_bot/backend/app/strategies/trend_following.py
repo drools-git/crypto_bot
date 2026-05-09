@@ -68,10 +68,12 @@ class TrendFollowingStrategy(BaseStrategy):
         # LONG: full bullish stack
         if price > ema20 > ema50 > ema200 and strong_trend and macd > 0:
             self._last_signal = SignalType.LONG
-            # Confidence: scale by how far ADX is above threshold (max 60 pts above → 1.0)
-            self._confidence  = min(1.0, 0.5 + ((adx - adx_thr) / 60))
+            # Confidence: starts at 50%, gains up to 35% from ADX strength above threshold
+            # Capped at 85% — no technical indicator is 100% reliable
+            adx_bonus = min(0.35, (adx - adx_thr) / 60)
+            self._confidence  = min(0.85, 0.50 + adx_bonus)
             if macd_h > 0:
-                self._confidence = min(1.0, self._confidence + 0.1)
+                self._confidence = min(0.85, self._confidence + 0.05)
             self._reasoning = (
                 f"Bullish EMA stack: price {price:.2f} > EMA20 {ema20:.2f} > "
                 f"EMA50 {ema50:.2f} > EMA200 {ema200:.2f}. ADX={adx:.1f}, MACD={macd:.2f}"
@@ -79,9 +81,10 @@ class TrendFollowingStrategy(BaseStrategy):
         # SHORT: full bearish stack
         elif price < ema20 < ema50 < ema200 and strong_trend and macd < 0:
             self._last_signal = SignalType.SHORT
-            self._confidence  = min(1.0, 0.5 + ((adx - adx_thr) / 60))
+            adx_bonus = min(0.35, (adx - adx_thr) / 60)
+            self._confidence  = min(0.85, 0.50 + adx_bonus)
             if macd_h < 0:
-                self._confidence = min(1.0, self._confidence + 0.1)
+                self._confidence = min(0.85, self._confidence + 0.05)
             self._reasoning = (
                 f"Bearish EMA stack: price {price:.2f} < EMA20 {ema20:.2f} < "
                 f"EMA50 {ema50:.2f} < EMA200 {ema200:.2f}. ADX={adx:.1f}, MACD={macd:.2f}"
@@ -96,9 +99,18 @@ class TrendFollowingStrategy(BaseStrategy):
             self._confidence  = 0.65
             self._reasoning   = "Price crossed above EMA20 — potential short-side reversal."
         else:
+            # HOLD — but report how close we are to triggering (proximity score)
+            stack_ok = price > ema20 > ema50 > ema200 if (ema20 and ema50 and ema200) else False
+            adx_proximity = min(1.0, adx / adx_thr)  # 0→1 as ADX approaches threshold
+            macd_ok = macd > 0
+            # Partial score: how many conditions are met out of 3
+            partial = (int(stack_ok) + int(adx_proximity > 0.7) + int(macd_ok)) / 3
             self._last_signal = SignalType.HOLD
-            self._confidence  = 0.0
-            self._reasoning   = f"No clear trend signal. ADX={adx:.1f} (threshold={adx_thr})"
+            self._confidence  = round(partial * 0.4, 3)  # max 40% when all conditions are almost met
+            self._reasoning   = (
+                f"Sin señal clara. ADX={adx:.1f}/{adx_thr} ({adx_proximity*100:.0f}% del umbral). "
+                f"Stack EMA {'✓' if stack_ok else '✗'}. MACD {'✓' if macd_ok else '✗'}."
+            )
 
     def generate_signal(self) -> Signal:
         symbol    = str(self._metadata.get("symbol", "UNKNOWN"))

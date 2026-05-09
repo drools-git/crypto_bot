@@ -113,8 +113,14 @@ class OrderFlowConfirmationStrategy(BaseStrategy):
             "price":    last.get("close"),
         }
 
-        # normalise to 0→1
-        confidence = abs(score) / 4.0
+        # Scale confidence: 3/4 = 60%, 4/4 = 75% base
+        # Then adjust for RSI extremity and ADX spread as bonus (max 85%)
+        rsi = last.get("rsi", 50) or 50
+        base_conf = {3: 0.60, 4: 0.75}.get(abs(score), abs(score) / 4.0 * 0.75)
+        rsi_bonus = max(0.0, (abs(rsi - 50) - 5) / 100)  # 0→0.1 based on RSI distance from 50
+        adx_spread = abs((last.get("adx_pos", 0) or 0) - (last.get("adx_neg", 0) or 0))
+        adx_bonus  = min(0.10, adx_spread / 200)          # 0→0.1
+        confidence = min(0.85, base_conf + rsi_bonus + adx_bonus)
 
         if score >= long_thr:
             self._last_signal = SignalType.LONG
@@ -135,9 +141,14 @@ class OrderFlowConfirmationStrategy(BaseStrategy):
             self._confidence  = 0.55
             self._reasoning   = f"Flow consensus collapsed to neutral (score={score})."
         else:
+            # HOLD — report partial score (how close to threshold)
+            proximity = abs(score) / long_thr  # 0→1 as score approaches threshold
             self._last_signal = SignalType.HOLD
-            self._confidence  = 0.0
-            self._reasoning   = f"Mixed signals: score={score} (threshold: ±{long_thr})"
+            self._confidence  = round(proximity * 0.35, 3)  # max 35% (= 2/3 sub-signals met)
+            self._reasoning   = (
+                f"Señales mixtas: puntuación={score} (necesario ±{long_thr}). "
+                f"{abs(score)} de {long_thr} factores necesarios alineados."
+            )
 
     def generate_signal(self) -> Signal:
         symbol    = str(self._metadata.get("symbol", "UNKNOWN"))
