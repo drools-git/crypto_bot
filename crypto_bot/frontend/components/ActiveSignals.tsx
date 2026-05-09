@@ -11,6 +11,15 @@ type Signal = {
   symbol: string;
 };
 
+type ConsensusData = {
+  direction: string;
+  confidence: number;
+  votes: Record<string, number>;
+  n_signals: number;
+  n_active: number;
+  signals: Signal[];
+};
+
 const SIGNAL_CONFIG = {
   LONG:  { color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/20", Icon: TrendingUp },
   SHORT: { color: "text-rose-500",    bg: "bg-rose-500/10    border-rose-500/20",    Icon: TrendingDown },
@@ -19,18 +28,18 @@ const SIGNAL_CONFIG = {
 };
 
 export const ActiveSignals = ({ symbol = "BTC/USDT" }: { symbol?: string }) => {
-  const [signals, setSignals] = useState<Signal[]>([]);
+  const [data, setData] = useState<ConsensusData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchSignals = async () => {
     try {
       const host = window.location.hostname || "localhost";
       const res = await fetch(
-        `http://${host}:8000/api/v1/strategies/signals?symbol=${encodeURIComponent(symbol)}&timeframe=1h&limit=300`
+        `http://${host}:8000/api/v1/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=1h&limit=300`
       );
       if (!res.ok) throw new Error("Fetch failed");
-      const data: Signal[] = await res.json();
-      setSignals(data);
+      const json: ConsensusData = await res.json();
+      setData(json);
     } catch {
       // silently retry on next interval
     } finally {
@@ -44,7 +53,8 @@ export const ActiveSignals = ({ symbol = "BTC/USDT" }: { symbol?: string }) => {
     return () => clearInterval(iv);
   }, [symbol]);
 
-  const active = signals.filter((s) => s.signal !== "HOLD");
+  const signals = data?.signals || [];
+  const active = signals.filter((s) => s.signal !== "HOLD" || s.confidence > 0);
 
   return (
     <div className="flex flex-col gap-2 h-full overflow-y-auto">
@@ -88,29 +98,35 @@ export const ActiveSignals = ({ symbol = "BTC/USDT" }: { symbol?: string }) => {
       })}
 
       {/* Consensus bar */}
-      {!loading && signals.length > 0 && (
-        <ConsensusBar signals={signals} />
+      {!loading && data && (
+        <ConsensusBar data={data} />
       )}
     </div>
   );
 };
 
-function ConsensusBar({ signals }: { signals: Signal[] }) {
-  const counts = signals.reduce<Record<string, number>>((acc, s) => {
-    acc[s.signal] = (acc[s.signal] ?? 0) + 1;
-    return acc;
-  }, {});
+function ConsensusBar({ data }: { data: ConsensusData }) {
+  const { direction, confidence, votes } = data;
+  const cfg = SIGNAL_CONFIG[direction as keyof typeof SIGNAL_CONFIG] ?? SIGNAL_CONFIG.HOLD;
+  const { Icon } = cfg;
 
-  const total = signals.length || 1;
+  const totalVotes = Object.values(votes).reduce((sum, v) => sum + v, 0) || 1;
 
   return (
     <div className="mt-2 pt-2 border-t border-white/5">
-      <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">
-        Consensus
-      </span>
-      <div className="flex gap-0.5 mt-1 h-1.5 rounded overflow-hidden">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">
+          Consensus
+        </span>
+        <div className={`flex items-center gap-1 ${cfg.color}`}>
+          <Icon className="w-3 h-3" />
+          <span className="text-[10px] font-bold">{direction} ({(confidence * 100).toFixed(1)}%)</span>
+        </div>
+      </div>
+      <div className="flex gap-0.5 h-1.5 rounded overflow-hidden">
         {(["LONG", "SHORT", "EXIT", "HOLD"] as const).map((sig) => {
-          const pct = ((counts[sig] ?? 0) / total) * 100;
+          const v = votes[sig] ?? 0;
+          const pct = (v / totalVotes) * 100;
           const colors = {
             LONG: "bg-emerald-500", SHORT: "bg-rose-500",
             EXIT: "bg-amber-500",   HOLD:  "bg-zinc-600",
@@ -120,19 +136,10 @@ function ConsensusBar({ signals }: { signals: Signal[] }) {
               key={sig}
               className={`${colors[sig]} transition-all`}
               style={{ width: `${pct}%` }}
-              title={`${sig}: ${counts[sig] ?? 0}`}
+              title={`${sig}: ${v.toFixed(2)}`}
             />
           ) : null;
         })}
-      </div>
-      <div className="flex gap-3 mt-1">
-        {(["LONG", "SHORT", "EXIT"] as const).map((sig) =>
-          (counts[sig] ?? 0) > 0 ? (
-            <span key={sig} className={`text-[9px] font-mono ${SIGNAL_CONFIG[sig].color}`}>
-              {sig}: {counts[sig]}
-            </span>
-          ) : null
-        )}
       </div>
     </div>
   );
