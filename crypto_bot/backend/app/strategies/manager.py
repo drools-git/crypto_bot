@@ -20,6 +20,7 @@ import app.strategies.trend_following      # noqa: F401
 import app.strategies.mean_reversion       # noqa: F401
 import app.strategies.breakout_volume      # noqa: F401
 import app.strategies.order_flow           # noqa: F401
+import app.strategies.smart_money          # noqa: F401
 
 
 class StrategyManager:
