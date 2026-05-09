@@ -11,6 +11,7 @@ from app.strategies.manager import strategy_manager
 from app.market.market_data_manager import market_data_engine
 from app.indicators.engine import indicator_engine
 from app.strategies.models import SignalType
+from app.execution.paper_trading import paper_trading_engine
 
 DATA_DIR = Path("data/records")
 SIGNAL_FILE = DATA_DIR / "signal_history.json"
@@ -143,6 +144,9 @@ class SignalEngine:
                         # Keep only last 100 to avoid bloat
                         history = history[:100]
                         self._last_direction = direction
+                        
+                        # Process official signal in Paper Trading Engine
+                        paper_trading_engine.process_signal(new_signal)
 
                 self._save_history(history)
 

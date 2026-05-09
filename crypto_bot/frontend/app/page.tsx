@@ -8,6 +8,7 @@ import { NewsFeed } from "@/components/NewsFeed";
 import { Activity, Settings } from "lucide-react";
 import { ActiveSignals } from "@/components/ActiveSignals";
 import { SignalHistory } from "@/components/SignalHistory";
+import { PerformanceWidget, OpenPositionsWidget } from "@/components/Portfolio";
 
 export default function TerminalDashboard() {
   return (
@@ -143,28 +144,15 @@ function BottomPanel() {
           <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">PERFORMANCE</span>
           </div>
-          <div className="p-4 flex flex-col gap-2 flex-1 justify-center overflow-hidden">
-            <div className="flex justify-between items-end">
-              <span className="text-xs text-zinc-500">Unrealized PNL</span>
-              <span className="font-mono text-emerald-500">+$0.00</span>
-            </div>
-            <div className="flex justify-between items-end">
-              <span className="text-xs text-zinc-500">Realized PNL</span>
-              <span className="font-mono text-emerald-500">+$0.00</span>
-            </div>
-            <div className="flex justify-between items-end mt-2 pt-2 border-t border-white/5">
-              <span className="text-xs text-zinc-500">Total Equity</span>
-              <span className="font-mono text-zinc-200 font-bold">$100,000.00</span>
-            </div>
-          </div>
+          <PerformanceWidget />
         </div>
 
         <div className="w-1/4 border-r border-white/5 flex flex-col">
           <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">OPEN POSITIONS</span>
           </div>
-          <div className="p-4 text-xs text-zinc-600 font-mono flex items-center justify-center h-full opacity-50">
-            No active positions
+          <div className="flex-1 overflow-hidden">
+             <OpenPositionsWidget />
           </div>
         </div>
 

@@ -1,0 +1,15 @@
+[
+  {
+    "id": "2026-05-09T23:47:03.408645+00:00",
+    "symbol": "BTC/USDT",
+    "direction": "LONG",
+    "confidence": 0.658,
+    "price": 80662.58,
+    "reasoning": [
+      "Order Flow Confirmation"
+    ],
+    "unrealized_pnl": 0.01,
+    "status": "OPEN",
+    "current_price": 80671.17
+  }
+]
