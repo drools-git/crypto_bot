@@ -41,22 +41,24 @@ class SmartMoneyStrategy(BaseStrategy):
         last = df.iloc[-1]
         prev = df.iloc[-2]
 
-        price = last.get("close", 0)
+        price = float(last.get("close", 0))
         
         # FVGs
-        fvg_bull     = last.get("fvg_bull", False)
-        fvg_bear     = last.get("fvg_bear", False)
-        fvg_bull_gap = last.get("fvg_bull_gap", 0)
-        fvg_bear_gap = last.get("fvg_bear_gap", 0)
+        fvg_bull     = bool(last.get("fvg_bull", False))
+        fvg_bear     = bool(last.get("fvg_bear", False))
+        fvg_bull_gap = float(last.get("fvg_bull_gap", 0))
+        fvg_bear_gap = float(last.get("fvg_bear_gap", 0))
 
-        # Structure
+        # Structure - handle NaNs!
         last_swing_high = last.get("last_swing_high")
+        last_swing_high = float(last_swing_high) if pd.notna(last_swing_high) else None
+
         last_swing_low  = last.get("last_swing_low")
+        last_swing_low  = float(last_swing_low) if pd.notna(last_swing_low) else None
         
         # Let's detect a BOS (Break of Structure) or CHoCH (Change of Character)
-        # For simplicity, if price closes above the last swing high, it's a bullish BOS
-        bullish_bos = pd.notna(last_swing_high) and price > last_swing_high and prev.get("close", 0) <= last_swing_high
-        bearish_bos = pd.notna(last_swing_low) and price < last_swing_low and prev.get("close", 0) >= last_swing_low
+        bullish_bos = (last_swing_high is not None) and price > last_swing_high and prev.get("close", 0) <= last_swing_high
+        bearish_bos = (last_swing_low is not None) and price < last_swing_low and prev.get("close", 0) >= last_swing_low
 
         self._metadata = {
             "price": price, 
@@ -84,7 +86,7 @@ class SmartMoneyStrategy(BaseStrategy):
         else:
             # HOLD: Report proximity or state
             state_text = []
-            if pd.notna(last_swing_high) and pd.notna(last_swing_low):
+            if last_swing_high is not None and last_swing_low is not None:
                 # Calculate where price is relative to the current swing range
                 swing_range = last_swing_high - last_swing_low
                 if swing_range > 0:

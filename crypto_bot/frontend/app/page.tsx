@@ -42,7 +42,7 @@ export default function TerminalDashboard() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* LEFT PANEL */}
-        <div className="w-64 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
+        <div className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
           <PanelSection title="WATCHLIST">
             <div className="flex justify-between items-center py-1 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
               <div className="flex gap-2 items-center">
@@ -58,11 +58,11 @@ export default function TerminalDashboard() {
             </div>
           </PanelSection>
           
-          <PanelSection title="ACTIVE SIGNALS" flex>
+          <PanelSection title="ACTIVE SIGNALS" className="flex-[3] overflow-hidden">
             <ActiveSignals symbol="BTC/USDT" />
           </PanelSection>
           
-          <PanelSection title="MARKET INTELLIGENCE" flex>
+          <PanelSection title="MARKET INTELLIGENCE" className="flex-[2] overflow-hidden">
             <NewsFeed />
           </PanelSection>
         </div>
@@ -96,13 +96,13 @@ export default function TerminalDashboard() {
   );
 }
 
-function PanelSection({ title, children, flex = false }: { title: string, children: React.ReactNode, flex?: boolean }) {
+function PanelSection({ title, children, flex = false, className = "" }: { title: string, children: React.ReactNode, flex?: boolean, className?: string }) {
   return (
-    <div className={`flex flex-col border-b border-white/5 last:border-0 ${flex ? 'flex-1 overflow-hidden' : ''}`}>
+    <div className={`flex flex-col border-b border-white/5 last:border-0 ${flex ? 'flex-1 overflow-hidden' : ''} ${className}`}>
       <div className="h-8 flex items-center px-4 bg-white/[0.02]">
         <span className="text-[10px] font-bold text-zinc-500 tracking-widest">{title}</span>
       </div>
-      <div className={`p-4 ${flex ? 'flex-1 overflow-hidden' : ''}`}>
+      <div className={`p-4 ${flex || className.includes('flex') ? 'flex-1 overflow-hidden' : ''}`}>
         {children}
       </div>
     </div>
