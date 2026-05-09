@@ -68,34 +68,9 @@ export const ActiveSignals = ({ symbol = "BTC/USDT" }: { symbol?: string }) => {
           No active signals
         </span>
       )}
-      {active.map((sig) => {
-        const cfg = SIGNAL_CONFIG[sig.signal] ?? SIGNAL_CONFIG.HOLD;
-        const { Icon } = cfg;
-        return (
-          <div
-            key={sig.strategy_id}
-            className={`rounded border px-2 py-1.5 ${cfg.bg} flex flex-col gap-0.5`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                {sig.strategy_name}
-              </span>
-              <div className={`flex items-center gap-1 ${cfg.color}`}>
-                <Icon className="w-3 h-3" />
-                <span className="text-[10px] font-bold">{sig.signal}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-mono text-zinc-500 line-clamp-1 flex-1 pr-2">
-                {sig.reasoning}
-              </span>
-              <span className={`text-[10px] font-mono font-bold shrink-0 ${cfg.color}`}>
-                {(sig.confidence * 100).toFixed(0)}%
-              </span>
-            </div>
-          </div>
-        );
-      })}
+      {active.map((sig) => (
+        <SignalItem key={sig.strategy_id} sig={sig} />
+      ))}
 
       {/* Consensus bar */}
       {!loading && data && (
@@ -140,6 +115,37 @@ function ConsensusBar({ data }: { data: ConsensusData }) {
             />
           ) : null;
         })}
+      </div>
+    </div>
+  );
+}
+
+function SignalItem({ sig }: { sig: Signal }) {
+  const [expanded, setExpanded] = useState(false);
+  const cfg = SIGNAL_CONFIG[sig.signal] ?? SIGNAL_CONFIG.HOLD;
+  const { Icon } = cfg;
+  
+  return (
+    <div
+      onClick={() => setExpanded(!expanded)}
+      className={`rounded border px-2 py-1.5 cursor-pointer hover:border-zinc-500/50 transition-colors ${cfg.bg} flex flex-col gap-1`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-bold text-zinc-200 uppercase tracking-widest">
+          {sig.strategy_name}
+        </span>
+        <div className={`flex items-center gap-1 ${cfg.color}`}>
+          <Icon className="w-3.5 h-3.5" />
+          <span className="text-[11px] font-bold">{sig.signal}</span>
+        </div>
+      </div>
+      <div className="flex items-start justify-between">
+        <span className={`text-[10px] font-mono flex-1 pr-2 transition-all ${expanded ? 'text-zinc-300' : 'text-zinc-400 line-clamp-1'}`}>
+          {sig.reasoning}
+        </span>
+        <span className={`text-[11px] font-mono font-bold shrink-0 ${cfg.color}`}>
+          {(sig.confidence * 100).toFixed(0)}%
+        </span>
       </div>
     </div>
   );
