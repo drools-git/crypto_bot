@@ -85,13 +85,10 @@ export default function TerminalDashboard() {
                     <span className="font-mono text-xs text-emerald-500">+2.4%</span>
                   </div>
                 </PanelSection>
-                <PanelSection title="ACTIVE SIGNALS" className="flex-[2] overflow-hidden" flex>
+                <PanelSection title="ACTIVE SIGNALS" className="flex-[3] overflow-hidden" flex>
                   <ActiveSignals symbol="BTC/USDT" timeframe={timeframe} />
                 </PanelSection>
-                <PanelSection title="SIGNAL HISTORY" className="flex-1 overflow-hidden" flex>
-                  <SignalHistory />
-                </PanelSection>
-                <PanelSection title="LATEST NEWS" className="flex-1 overflow-hidden">
+                <PanelSection title="LATEST NEWS" className="flex-[2] overflow-hidden">
                   <NewsFeed />
                 </PanelSection>
               </div>
@@ -137,9 +134,9 @@ function PanelSection({ title, children, flex = false, className = "" }: { title
 }
 
 function BottomPanel() {
-  const [height, setHeight] = useState(160);
+  const [height, setHeight] = useState(200);
   const minH = 36; // collapse to just the tab headers
-  const maxH = 300;
+  const maxH = 500;
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -165,14 +162,14 @@ function BottomPanel() {
         className="w-full h-[5px] cursor-row-resize bg-white/5 hover:bg-blue-500/40 transition-colors shrink-0"
       />
       <div className="bg-[#0a0a0a] flex shrink-0 overflow-hidden" style={{ height }}>
-        <div className="w-1/4 border-r border-white/5 flex flex-col">
+        <div className="w-1/5 border-r border-white/5 flex flex-col">
           <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">PERFORMANCE</span>
           </div>
           <PerformanceWidget />
         </div>
 
-        <div className="w-1/4 border-r border-white/5 flex flex-col">
+        <div className="w-1/5 border-r border-white/5 flex flex-col">
           <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">OPEN POSITIONS</span>
           </div>
@@ -181,7 +178,7 @@ function BottomPanel() {
           </div>
         </div>
 
-        <div className="w-1/4 border-r border-white/5 flex flex-col">
+        <div className="w-1/5 border-r border-white/5 flex flex-col">
           <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">RECENT TRADES</span>
           </div>
@@ -190,11 +187,20 @@ function BottomPanel() {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col">
+        <div className="w-1/5 border-r border-white/5 flex flex-col">
           <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">RISK MANAGEMENT</span>
           </div>
           <RiskStatusWidget />
+        </div>
+
+        <div className="flex-1 flex flex-col">
+          <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
+            <span className="text-[10px] font-bold text-zinc-500 tracking-widest">SIGNAL HISTORY</span>
+          </div>
+          <div className="flex-1 overflow-hidden">
+             <SignalHistory />
+          </div>
         </div>
       </div>
     </>
