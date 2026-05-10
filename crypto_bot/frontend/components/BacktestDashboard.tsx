@@ -298,7 +298,32 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
       height: equityContainerRef.current.clientHeight,
     });
 
-    // 1. Price Series - Use consistent API
+    // Helper function to apply markers using the best available API
+    const applyMarkers = (series: any, markerList: any[]) => {
+      if (!markerList || markerList.length === 0) return;
+      const formatted = markerList.map(m => ({
+        time: Number(m.time) as any,
+        position: m.position as any,
+        color: m.color,
+        shape: m.shape as any,
+        text: m.text,
+        size: 1
+      })).sort((a, b) => (a.time as number) - (b.time as number));
+
+      try {
+        if (typeof createSeriesMarkers === 'function') {
+          createSeriesMarkers(series, formatted);
+        } else if (typeof (series as any).createSeriesMarkers === 'function') {
+          (series as any).createSeriesMarkers(formatted);
+        } else if (typeof series.setMarkers === 'function') {
+          series.setMarkers(formatted);
+        }
+      } catch (err) {
+        console.error('Failed to apply markers', err);
+      }
+    };
+
+    // 1. Price Series
     let priceSeries: any;
     // @ts-ignore
     if (priceChart.addCandlestickSeries) {
@@ -312,46 +337,13 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
       });
     }
 
-    // Set Data
-    const formattedPriceData = priceData.map(p => ({
+    priceSeries.setData(priceData.map(p => ({
       time: Number(p.time) as any,
       open: p.open, high: p.high, low: p.low, close: p.close
-    }));
-    priceSeries.setData(formattedPriceData);
+    })));
 
-    // DEBUG LOGS
-    console.log('priceData sample', formattedPriceData.slice(0, 15));
-    console.log('priceSeries methods', Object.keys(priceSeries));
-    console.log('has setMarkers', typeof priceSeries.setMarkers);
-
-    // DETERMINISTIC MARKER (Step 2)
-    if (formattedPriceData.length > 10) {
-      const testMarker = {
-        time: formattedPriceData[10].time,
-        position: 'aboveBar' as any,
-        color: '#00ff00',
-        shape: 'arrowDown' as any,
-        text: 'TEST'
-      };
-      
-      // Try all known APIs
-      try {
-        if (typeof createSeriesMarkers === 'function') {
-          console.log('Using standalone createSeriesMarkers(series, markers)');
-          createSeriesMarkers(priceSeries, [testMarker]);
-        } else if (typeof (priceSeries as any).createSeriesMarkers === 'function') {
-          console.log('Using series.createSeriesMarkers');
-          (priceSeries as any).createSeriesMarkers([testMarker]);
-        } else if (typeof priceSeries.setMarkers === 'function') {
-          console.log('Using series.setMarkers');
-          priceSeries.setMarkers([testMarker]);
-        } else {
-          console.error('No known marker API found (tried createSeriesMarkers standalone, series method, and setMarkers)');
-        }
-      } catch (err) {
-        console.error('Marker assignment failed', err);
-      }
-    }
+    // Apply real markers to Price Chart
+    applyMarkers(priceSeries, markers);
 
     // 2. Equity Series
     let areaSeries: any;
@@ -377,6 +369,9 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
       time: Number(p.time) as any,
       value: p.equity
     })));
+
+    // Apply real markers to Equity Chart (using inBar position for lines)
+    applyMarkers(areaSeries, markers.map(m => ({ ...m, position: 'inBar' })));
 
     // Synchronization
     let isSyncing = false;
@@ -407,7 +402,7 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
       priceChart.remove();
       equityChart.remove();
     };
-  }, [priceData, equityData]); // Removed markers from deps for this test
+  }, [priceData, equityData, markers]);
 
   return (
     <div className="grid grid-cols-1 gap-6 pb-10">
