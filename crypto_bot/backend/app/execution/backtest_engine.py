@@ -159,8 +159,5 @@ class BacktestEngine:
         finally:
             self.is_running = False
             self.progress = 100
-        finally:
-            self.is_running = False
-            self.progress = 100
 
 backtest_engine = BacktestEngine()
