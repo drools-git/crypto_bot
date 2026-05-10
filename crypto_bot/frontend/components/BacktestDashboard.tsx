@@ -261,7 +261,13 @@ const BacktestPriceChart = ({ data, markers }: { data: PricePoint[], markers: an
       timeScale: { borderColor: "rgba(255,255,255,0.1)", timeVisible: true },
     });
 
-    const series = chart.addCandlestickSeries({
+    // Robust series creation
+    const addFn = (chart: any) => {
+       if (chart.addCandlestickSeries) return chart.addCandlestickSeries.bind(chart);
+       return (options: any) => chart.addSeries(CandlestickSeries, options);
+    };
+
+    const series = addFn(chart)({
       upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
     });
 
@@ -273,7 +279,7 @@ const BacktestPriceChart = ({ data, markers }: { data: PricePoint[], markers: an
       close: p.close
     })));
 
-    if (markers && markers.length > 0) {
+    if (markers && markers.length > 0 && series.setMarkers) {
       series.setMarkers(markers);
     }
     chart.timeScale().fitContent();
@@ -304,7 +310,12 @@ const EquityChart = ({ data }: { data: EquityPoint[] }) => {
     });
 
     try {
-      const areaSeries = chart.addSeries(AreaSeries, {
+      const addFn = (chart: any) => {
+         if (chart.addAreaSeries) return chart.addAreaSeries.bind(chart);
+         return (options: any) => chart.addSeries(AreaSeries, options);
+      };
+
+      const areaSeries = addFn(chart)({
         lineColor: "#3b82f6",
         topColor: "rgba(59, 130, 246, 0.4)",
         bottomColor: "rgba(59, 130, 246, 0.05)",
