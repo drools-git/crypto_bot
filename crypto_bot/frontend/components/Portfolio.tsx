@@ -26,6 +26,8 @@ type Trade = {
   size_quote: number;
   fee: number;
   realized_pnl: number;
+  stop_loss?: number;
+  take_profit?: number;
   reasoning: string;
 };
 
@@ -212,6 +214,13 @@ export const RecentTradesWidget = () => {
                 <span className="text-[9px] text-zinc-500">Fee: ${trade.fee.toFixed(2)}</span>
                 <span className="text-[9px] font-mono text-zinc-400">Cost: ${trade.size_quote.toFixed(2)}</span>
               </div>
+            )}
+            
+            {(trade.stop_loss > 0 || trade.take_profit > 0) && (
+               <div className="flex items-center justify-between mt-0.5 text-[8px] font-mono opacity-60">
+                 {trade.stop_loss > 0 && <span className="text-rose-400">SL: {trade.stop_loss.toFixed(1)}</span>}
+                 {trade.take_profit > 0 && <span className="text-emerald-400">TP: {trade.take_profit.toFixed(1)}</span>}
+               </div>
             )}
           </div>
         );

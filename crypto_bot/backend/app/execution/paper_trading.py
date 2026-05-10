@@ -45,7 +45,7 @@ class PaperTradingEngine:
                 logger.error(f"Failed to calculate fees from CSV: {e}")
         else:
             with open(TRADES_FILE, "w", encoding="utf-8") as f:
-                f.write("trade_id,timestamp,symbol,side,type,price,size_base,size_quote,fee,realized_pnl,reasoning\n")
+                f.write("trade_id,timestamp,symbol,side,type,price,size_base,size_quote,fee,realized_pnl,stop_loss,take_profit,reasoning\n")
 
     def _save(self, current_price: float = None):
         with open(PORTFOLIO_FILE, "w", encoding="utf-8") as f:
@@ -57,10 +57,13 @@ class PaperTradingEngine:
             }, f, indent=2)
 
     def _append_trade_csv(self, trade: Dict[str, Any]):
+        # Ensure backwards compatibility if reading an older file format
+        sl = trade.get("stop_loss", 0.0)
+        tp = trade.get("take_profit", 0.0)
         with open(TRADES_FILE, "a", encoding="utf-8") as f:
             f.write(f"{trade['trade_id']},{trade['timestamp']},{trade['symbol']},{trade['side']},{trade['type']},"
                     f"{trade['price']},{trade['size_base']},{trade['size_quote']},{trade['fee']},"
-                    f"{trade['realized_pnl']},{trade['reasoning']}\n")
+                    f"{trade['realized_pnl']},{sl},{tp},{trade['reasoning']}\n")
 
     def get_portfolio(self, current_prices: Dict[str, float] = None) -> Dict[str, Any]:
         """Calculate real-time equity based on current market prices."""
@@ -199,6 +202,8 @@ class PaperTradingEngine:
             "size_quote": cost,
             "fee": fee,
             "realized_pnl": 0.0,
+            "stop_loss": stop_loss,
+            "take_profit": take_profit,
             "reasoning": reasoning
         }
         self._append_trade_csv(trade)
@@ -241,6 +246,8 @@ class PaperTradingEngine:
             "size_quote": value_quote,
             "fee": fee,
             "realized_pnl": realized_pnl,
+            "stop_loss": pos.get("stop_loss", 0.0),
+            "take_profit": pos.get("take_profit", 0.0),
             "reasoning": reasoning
         }
         self._append_trade_csv(trade)
@@ -256,7 +263,7 @@ class PaperTradingEngine:
             lines = f.readlines()[1:] # skip header
             for line in reversed(lines): # read backwards
                 if not line.strip(): continue
-                parts = line.strip().split(",", 10)
+                parts = line.strip().split(",", 12)
                 if len(parts) < 11: continue
                 trades.append({
                     "trade_id": parts[0],
@@ -269,7 +276,9 @@ class PaperTradingEngine:
                     "size_quote": float(parts[7]),
                     "fee": float(parts[8]),
                     "realized_pnl": float(parts[9]),
-                    "reasoning": parts[10]
+                    "stop_loss": float(parts[10]) if len(parts) > 12 else 0.0,
+                    "take_profit": float(parts[11]) if len(parts) > 12 else 0.0,
+                    "reasoning": parts[12] if len(parts) > 12 else parts[10] # Handle old vs new format
                 })
                 if len(trades) >= limit:
                     break
