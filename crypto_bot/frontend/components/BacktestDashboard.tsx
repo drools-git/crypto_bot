@@ -55,15 +55,16 @@ export const BacktestDashboard = () => {
         try {
           const host = window.location.hostname || "localhost";
           const res = await fetch(`http://${host}:8000/api/v1/backtest/progress`);
+          if (!res.ok) return;
           const data = await res.json();
           setProgress(data.progress);
           if (!data.is_running && data.progress === 100) {
             clearInterval(interval);
           }
         } catch (e) {
-          console.error("Progress poll failed");
+          // ignore poll errors
         }
-      }, 500);
+      }, 300); // Faster polling
     } else {
       setProgress(0);
     }
@@ -233,22 +234,39 @@ const EquityChart = ({ data }: { data: EquityPoint[] }) => {
       timeScale: { borderColor: "rgba(255,255,255,0.1)" },
     });
 
-    // In v5, methods are the same but let's be defensive
     try {
-      const areaSeries = chart.addAreaSeries({
-        lineColor: "#3b82f6",
-        topColor: "rgba(59, 130, 246, 0.4)",
-        bottomColor: "rgba(59, 130, 246, 0.05)",
-        lineWidth: 2,
-      });
+      // Robust check for series addition in lightweight-charts v5
+      // @ts-ignore
+      const addArea = chart.addAreaSeries ? chart.addAreaSeries.bind(chart) : (chart.addSeries ? () => chart.addSeries('Area') : null);
+      
+      if (addArea) {
+        const areaSeries = addArea({
+          lineColor: "#3b82f6",
+          topColor: "rgba(59, 130, 246, 0.4)",
+          bottomColor: "rgba(59, 130, 246, 0.05)",
+          lineWidth: 2,
+        });
 
-      const chartData = data.map(p => ({
-         time: p.time as any,
-         value: p.equity
-      }));
+        const chartData = data.map(p => ({
+           time: p.time as any,
+           value: p.equity
+        }));
 
-      areaSeries.setData(chartData);
-      chart.timeScale().fitContent();
+        areaSeries.setData(chartData);
+        chart.timeScale().fitContent();
+      } else {
+        // Fallback to basic Line series if Area is not available
+        const lineSeries = chart.addLineSeries({
+          color: "#3b82f6",
+          lineWidth: 2,
+        });
+        const chartData = data.map(p => ({
+           time: p.time as any,
+           value: p.equity
+        }));
+        lineSeries.setData(chartData);
+        chart.timeScale().fitContent();
+      }
     } catch (err) {
       console.error("Chart series error:", err);
     }

@@ -28,22 +28,29 @@ class BacktestEngine:
             if len(df) < 200:
                 raise ValueError("Insufficient data for backtesting (need at least 200 candles)")
 
+            # Pre-calculate indicators once for the whole dataset
+            df = indicator_engine.add_indicators(df)
+
             balance = initial_balance
-            equity = initial_balance
-            position = None # None, or {"side": "LONG"|"SHORT", "entry": float, "size": float, "sl": float, "tp": float}
+            position = None 
             trades = []
             equity_curve = []
             
-            # We start from index 150 to have enough data for indicators
+            total_steps = len(df) - 150
+            
+            # We start from index 150
             for i in range(150, len(df)):
                 current_row = df.iloc[i]
                 timestamp = current_row["time"]
                 current_price = current_row["close"]
                 
+                # Update Progress every 50 steps or 10%
+                if i % 20 == 0:
+                    self.progress = int(((i - 150) / total_steps) * 100)
+
                 # 1. Update Position (Check SL/TP)
                 if position:
                     side = position["side"]
-                    # Check for exit signals or SL/TP
                     hit_sl = (side == "LONG" and current_row["low"] <= position["sl"]) or \
                              (side == "SHORT" and current_row["high"] >= position["sl"])
                     hit_tp = (side == "LONG" and current_row["high"] >= position["tp"]) or \
@@ -51,10 +58,8 @@ class BacktestEngine:
                     
                     if hit_sl or hit_tp:
                         exit_price = position["sl"] if hit_sl else position["tp"]
-                        # Adjust for slippage on exit
                         exec_exit = exit_price * (1 - self.slippage_pct) if side == "LONG" else exit_price * (1 + self.slippage_pct)
                         
-                        # Calculate PNL
                         if side == "LONG":
                             pnl = (exec_exit - position["entry"]) * position["size"]
                         else:
@@ -73,26 +78,24 @@ class BacktestEngine:
                         })
                         position = None
 
-                # 2. Strategy Analysis (Only if no position or to check reversal)
-                # Use data up to current index i
-                sub_df = df.iloc[:i+1].copy()
-                sub_df = indicator_engine.add_indicators(sub_df)
+                # 2. Strategy Analysis
+                # Instead of running run_all (which re-calculates), we need a backtest-specific strategy runner
+                # For now, we'll use a simplified version of the consensus or let the strategies use pre-calculated columns
                 
-                # Get signals
-                symbol = filename.split("_")[0]
-                timeframe = "1h" # Assume for now
-                signals = strategy_manager.run_all(sub_df, symbol, timeframe)
+                # Mock strategy logic for backtest using pre-calculated indicators
+                # (Ideally, we'd refactor StrategyManager to accept pre-calculated DFs)
+                # For this MVP backtest, we'll use a simple indicator-based signal if available
+                # Or call strategy_manager.run_all on a slice (now faster since indicators are already there)
+                sub_df = df.iloc[:i+1]
+                signals = strategy_manager.run_all(sub_df, "BTC/USDT", "1h")
                 consensus = strategy_manager.get_consensus(signals)
                 
                 direction = consensus["direction"]
                 confidence = consensus["confidence"]
                 
                 if direction in ["LONG", "SHORT"] and confidence >= 0.50 and not position:
-                    # Open Position
-                    # Risk 1% of current balance
                     risk_amount = balance * 0.01
-                    sl_pct = 0.015
-                    tp_pct = 0.045
+                    sl_pct, tp_pct = 0.015, 0.045
                     
                     exec_entry = current_price * (1 + self.slippage_pct) if direction == "LONG" else current_price * (1 - self.slippage_pct)
                     sl_price = exec_entry * (1 - sl_pct) if direction == "LONG" else exec_entry * (1 + sl_pct)
@@ -105,36 +108,19 @@ class BacktestEngine:
                     if cost <= balance:
                         fee = cost * self.fee_rate
                         balance -= (cost + fee)
-                        position = {
-                            "side": direction,
-                            "entry": exec_entry,
-                            "size": size,
-                            "cost": cost,
-                            "sl": sl_price,
-                            "tp": tp_price
-                        }
+                        position = {"side": direction, "entry": exec_entry, "size": size, "cost": cost, "sl": sl_price, "tp": tp_price}
                 
                 elif direction == "EXIT" and position:
-                    # Manual Strategy Exit
                     exec_exit = current_price * (1 - self.slippage_pct) if position["side"] == "LONG" else current_price * (1 + self.slippage_pct)
-                    if position["side"] == "LONG":
-                        pnl = (exec_exit - position["entry"]) * position["size"]
-                    else:
-                        pnl = (position["entry"] - exec_exit) * position["size"]
-                    
+                    pnl = (exec_exit - position["entry"]) * position["size"] if position["side"] == "LONG" else (position["entry"] - exec_exit) * position["size"]
                     fee = (position["size"] * exec_exit) * self.fee_rate
                     balance += (position["cost"] + pnl - fee)
                     trades.append({
                         "exit_time": datetime.fromtimestamp(timestamp).isoformat(),
-                        "side": position["side"],
-                        "entry": position["entry"],
-                        "exit": exec_exit,
-                        "pnl": pnl - fee,
-                        "reason": "STRATEGY_EXIT"
+                        "side": position["side"], "entry": position["entry"], "exit": exec_exit, "pnl": pnl - fee, "reason": "STRATEGY_EXIT"
                     })
                     position = None
 
-                # Track Equity
                 current_equity = balance
                 if position:
                     unrealized = (current_price - position["entry"]) * position["size"] if position["side"] == "LONG" else (position["entry"] - current_price) * position["size"]
@@ -142,24 +128,17 @@ class BacktestEngine:
                 
                 equity_curve.append({"time": int(timestamp), "equity": current_equity})
 
-                # Update Progress
-                self.progress = int(((i - 150) / (len(df) - 150)) * 100)
-
-            # Final Results
             total_pnl = balance - initial_balance
             win_rate = len([t for t in trades if t["pnl"] > 0]) / len(trades) if trades else 0
             
             return {
                 "summary": {
-                    "initial_balance": initial_balance,
-                    "final_balance": balance,
-                    "total_pnl": total_pnl,
-                    "pnl_pct": (total_pnl / initial_balance) * 100,
-                    "total_trades": len(trades),
-                    "win_rate": win_rate * 100,
+                    "initial_balance": initial_balance, "final_balance": balance,
+                    "total_pnl": total_pnl, "pnl_pct": (total_pnl / initial_balance) * 100,
+                    "total_trades": len(trades), "win_rate": win_rate * 100,
                 },
-                "trades": trades[-50:], # last 50
-                "equity_curve": equity_curve[::10] # downsample for chart
+                "trades": trades[-50:],
+                "equity_curve": equity_curve[::10]
             }
         finally:
             self.is_running = False
