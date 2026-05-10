@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Play, Download, FileText, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
-import { createChart, ColorType, AreaSeries, LineSeries } from "lightweight-charts";
+import { createChart, ColorType, AreaSeries, LineSeries, CandlestickSeries, IChartApi, SeriesMarker } from "lightweight-charts";
 
 type HistoryFile = {
   filename: string;
@@ -9,27 +9,41 @@ type HistoryFile = {
   created_at: string;
 };
 
-type BacktestSummary = {
-  initial_balance: number;
-  final_balance: number;
-  total_pnl: number;
-  pnl_pct: number;
-  total_trades: number;
-  win_rate: number;
-};
-
 type EquityPoint = {
   time: number;
   equity: number;
 };
 
+type PricePoint = {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+};
+
+type BacktestResults = {
+  summary: {
+    initial_balance: number;
+    final_balance: number;
+    total_pnl: number;
+    pnl_pct: number;
+    total_trades: number;
+    win_rate: number;
+  };
+  trades: any[];
+  equity_curve: EquityPoint[];
+  price_data: PricePoint[];
+  markers: any[];
+};
+
 export const BacktestDashboard = () => {
   const [files, setFiles] = useState<HistoryFile[]>([]);
-  const [selectedFile, setSelectedFile] = useState("");
+  const [selectedFile, setSelectedFile] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [results, setResults] = useState<BacktestResults | null>(null);
   const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<{ summary: BacktestSummary, equity_curve: EquityPoint[] } | null>(null);
 
   const fetchFiles = async () => {
     try {
@@ -47,7 +61,6 @@ export const BacktestDashboard = () => {
     fetchFiles();
   }, []);
 
-  // Progress Polling
   useEffect(() => {
     let interval: any;
     if (loading) {
@@ -61,10 +74,8 @@ export const BacktestDashboard = () => {
           if (!data.is_running && data.progress === 100) {
             clearInterval(interval);
           }
-        } catch (e) {
-          // ignore poll errors
-        }
-      }, 300); // Faster polling
+        } catch (e) {}
+      }, 300);
     } else {
       setProgress(0);
     }
@@ -92,6 +103,7 @@ export const BacktestDashboard = () => {
     if (!selectedFile) return;
     setLoading(true);
     setResults(null);
+    setProgress(0);
     try {
       const host = window.location.hostname || "localhost";
       const res = await fetch(`http://${host}:8000/api/v1/backtest/run`, {
@@ -105,8 +117,8 @@ export const BacktestDashboard = () => {
       }
       const data = await res.json();
       setResults(data);
-    } catch (e) {
-      alert("Backtest failed");
+    } catch (e: any) {
+      alert(`Backtest failed: ${e.message}`);
     } finally {
       setLoading(false);
     }
@@ -130,7 +142,6 @@ export const BacktestDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Controls */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-5 space-y-4">
             <label className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">Select History Data</label>
@@ -154,15 +165,15 @@ export const BacktestDashboard = () => {
             <button 
               onClick={runBacktest}
               disabled={loading || !selectedFile}
-              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white py-3 rounded-lg font-bold text-sm transition-all"
+              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white py-3 rounded-lg font-bold text-sm transition-all h-12"
             >
               {loading ? (
-                <div className="w-full space-y-2">
+                <div className="w-full px-4 space-y-2">
                   <div className="flex justify-between text-[10px] font-bold text-blue-400 uppercase tracking-widest">
                     <span>Simulating...</span>
                     <span>{progress}%</span>
                   </div>
-                  <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
                       style={{ width: `${progress}%` }}
@@ -179,7 +190,6 @@ export const BacktestDashboard = () => {
           </div>
         </div>
 
-        {/* Results */}
         <div className="lg:col-span-3 space-y-6">
           {results ? (
             <>
@@ -190,18 +200,35 @@ export const BacktestDashboard = () => {
                 <ResultCard title="Final Equity" value={`$${results.summary.final_balance.toFixed(2)}`} />
               </div>
 
-              <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6 h-[400px]">
-                <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase mb-4">Equity Curve</h3>
-                <EquityChart data={results.equity_curve} />
+              <div className="grid grid-cols-1 gap-6">
+                <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6">
+                   <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase">Price & Trades</h3>
+                      <div className="flex gap-4 text-[10px] font-mono">
+                         <span className="flex items-center gap-1 text-emerald-500"><TrendingUp className="w-3 h-3" /> Buy</span>
+                         <span className="flex items-center gap-1 text-rose-500"><TrendingUp className="w-3 h-3 rotate-180" /> Sell</span>
+                      </div>
+                   </div>
+                   <div className="h-[400px]">
+                      <BacktestPriceChart data={results.price_data} markers={results.markers} />
+                   </div>
+                </div>
+
+                <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6">
+                  <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase mb-4">Equity Growth</h3>
+                  <div className="h-[250px]">
+                    <EquityChart data={results.equity_curve} />
+                  </div>
+                </div>
               </div>
             </>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-white/5 rounded-2xl">
+            <div className="h-full flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-white/5 rounded-2xl bg-black/20">
                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
                   <TrendingUp className="w-8 h-8 text-zinc-700" />
                </div>
-               <h3 className="text-zinc-300 font-bold">No Simulation Data</h3>
-               <p className="text-zinc-500 text-sm max-w-xs mt-2">Select a historical data file and click 'Run Backtest' to see how your strategy would have performed.</p>
+               <h3 className="text-zinc-300 font-bold">Historical Simulation Lab</h3>
+               <p className="text-zinc-500 text-sm max-w-xs mt-2">Pick a dataset and run your strategy. We will simulate every candle with commission and slippage impact.</p>
             </div>
           )}
         </div>
@@ -220,6 +247,46 @@ const ResultCard = ({ title, value, subValue, positive }: { title: string, value
   </div>
 );
 
+const BacktestPriceChart = ({ data, markers }: { data: PricePoint[], markers: any[] }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const chart = createChart(containerRef.current, {
+      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: "#71717a" },
+      grid: { vertLines: { color: "rgba(255,255,255,0.03)" }, horzLines: { color: "rgba(255,255,255,0.03)" } },
+      width: containerRef.current.clientWidth,
+      height: containerRef.current.clientHeight,
+      timeScale: { borderColor: "rgba(255,255,255,0.1)", timeVisible: true },
+    });
+
+    const series = chart.addSeries(CandlestickSeries, {
+      upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
+    });
+
+    series.setData(data.map(p => ({
+      time: p.time as any,
+      open: p.open,
+      high: p.high,
+      low: p.low,
+      close: p.close
+    })));
+
+    series.setMarkers(markers);
+    chart.timeScale().fitContent();
+
+    const handleResize = () => chart.applyOptions({ width: containerRef.current?.clientWidth });
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+    };
+  }, [data, markers]);
+
+  return <div ref={containerRef} className="w-full h-full" />;
+};
+
 const EquityChart = ({ data }: { data: EquityPoint[] }) => {
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -235,7 +302,6 @@ const EquityChart = ({ data }: { data: EquityPoint[] }) => {
     });
 
     try {
-      // Correct v5 series addition
       const areaSeries = chart.addSeries(AreaSeries, {
         lineColor: "#3b82f6",
         topColor: "rgba(59, 130, 246, 0.4)",
@@ -244,34 +310,20 @@ const EquityChart = ({ data }: { data: EquityPoint[] }) => {
       });
 
       if (data && data.length > 0) {
-        const chartData = data.map(p => ({
+        areaSeries.setData(data.map(p => ({
            time: p.time as any,
            value: p.equity
-        }));
-        areaSeries.setData(chartData);
+        })));
         chart.timeScale().fitContent();
       }
     } catch (err) {
-      console.error("Chart series error:", err);
-      // Fallback
-      try {
-        const lineSeries = chart.addSeries(LineSeries, { color: "#3b82f6", lineWidth: 2 });
-        if (data && data.length > 0) {
-          lineSeries.setData(data.map(p => ({ time: p.time as any, value: p.equity })));
-          chart.timeScale().fitContent();
-        }
-      } catch (inner) {
-        console.error("Critical chart error:", inner);
-      }
+       console.error("Equity chart error", err);
     }
 
-    const handleResize = () => {
-      chart.applyOptions({ width: chartContainerRef.current?.clientWidth });
-    };
-
-    window.addEventListener("resize", handleResize);
+    const handleResize = () => chart.applyOptions({ width: chartContainerRef.current?.clientWidth });
+    window.addEventListener('resize', handleResize);
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener('resize', handleResize);
       chart.remove();
     };
   }, [data]);

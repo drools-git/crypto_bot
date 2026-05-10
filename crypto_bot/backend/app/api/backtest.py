@@ -30,7 +30,7 @@ async def download_history(req: DownloadRequest):
 @router.post("/run")
 async def run_backtest(req: RunRequest):
     try:
-        results = backtest_engine.run(req.filename, req.initial_balance)
+        results = await backtest_engine.run(req.filename, req.initial_balance)
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
