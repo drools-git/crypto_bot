@@ -257,40 +257,73 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
     });
 
     // 1. Price Series
-    // @ts-ignore
-    const priceSeries = priceChart.addCandlestickSeries ? priceChart.addCandlestickSeries({
-      upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
-    }) : priceChart.addSeries(CandlestickSeries, {
-      upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
-    });
+    let priceSeries: any;
+    try {
+       // @ts-ignore
+       if (priceChart.addCandlestickSeries) {
+         // @ts-ignore
+         priceSeries = priceChart.addCandlestickSeries({
+           upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
+         });
+       } else {
+         priceSeries = priceChart.addSeries(CandlestickSeries, {
+           upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
+         });
+       }
+    } catch (e) {
+       console.error("Failed to create price series", e);
+    }
 
-    priceSeries.setData(priceData.map(p => ({
-      time: p.time as any,
-      open: p.open, high: p.high, low: p.low, close: p.close
-    })));
+    if (priceSeries) {
+      priceSeries.setData(priceData.map(p => ({
+        time: p.time as any,
+        open: p.open, high: p.high, low: p.low, close: p.close
+      })));
 
-    if (markers && markers.length > 0) {
-      priceSeries.setMarkers(markers);
+      if (markers && markers.length > 0) {
+        try {
+          if (typeof priceSeries.setMarkers === 'function') {
+            priceSeries.setMarkers(markers);
+          } else if (typeof priceSeries.applyOptions === 'function') {
+            // Some versions handle markers in options
+            priceSeries.applyOptions({ markers });
+          }
+        } catch (mErr) {
+          console.error("Failed to set markers", mErr);
+        }
+      }
     }
 
     // 2. Equity Series
-    // @ts-ignore
-    const areaSeries = equityChart.addAreaSeries ? equityChart.addAreaSeries({
-      lineColor: "#3b82f6",
-      topColor: "rgba(59, 130, 246, 0.4)",
-      bottomColor: "rgba(59, 130, 246, 0.05)",
-      lineWidth: 2,
-    }) : equityChart.addSeries(AreaSeries, {
-      lineColor: "#3b82f6",
-      topColor: "rgba(59, 130, 246, 0.4)",
-      bottomColor: "rgba(59, 130, 246, 0.05)",
-      lineWidth: 2,
-    });
+    let areaSeries: any;
+    try {
+      // @ts-ignore
+      if (equityChart.addAreaSeries) {
+        // @ts-ignore
+        areaSeries = equityChart.addAreaSeries({
+          lineColor: "#3b82f6",
+          topColor: "rgba(59, 130, 246, 0.4)",
+          bottomColor: "rgba(59, 130, 246, 0.05)",
+          lineWidth: 2,
+        });
+      } else {
+        areaSeries = equityChart.addSeries(AreaSeries, {
+          lineColor: "#3b82f6",
+          topColor: "rgba(59, 130, 246, 0.4)",
+          bottomColor: "rgba(59, 130, 246, 0.05)",
+          lineWidth: 2,
+        });
+      }
+    } catch (e) {
+      console.error("Failed to create equity series", e);
+    }
 
-    areaSeries.setData(equityData.map(p => ({
-      time: p.time as any,
-      value: p.equity
-    })));
+    if (areaSeries) {
+      areaSeries.setData(equityData.map(p => ({
+        time: p.time as any,
+        value: p.equity
+      })));
+    }
 
     // 3. Synchronization
     let isSyncing = false;
