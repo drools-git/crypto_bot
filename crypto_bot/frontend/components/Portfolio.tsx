@@ -211,7 +211,7 @@ export const RecentTradesWidget = () => {
               <div className="flex items-center justify-between">
                 <span className="text-[9px] text-zinc-500">Fee: ${trade.fee.toFixed(2)}</span>
                 <span className={`text-[10px] font-mono font-bold ${trade.realized_pnl > 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                  PNL: {trade.realized_pnl > 0 ? "+" : ""}{trade.realized_pnl.toFixed(2)} USDT
+                  PNL: {trade.realized_pnl > 0 ? "+" : ""}{trade.realized_pnl.toFixed(2)} USDT ({(trade.realized_pnl / trade.size_quote * 100).toFixed(2)}%)
                 </span>
               </div>
             ) : (
@@ -227,6 +227,11 @@ export const RecentTradesWidget = () => {
                  {trade.take_profit > 0 && <span className="text-emerald-400">TP: {trade.take_profit.toFixed(1)}</span>}
                </div>
             )}
+
+            {/* Reasoning block */}
+            <div className="mt-1 p-1.5 bg-black/20 rounded border border-white/5 text-[9px] text-zinc-400 italic">
+              ↳ {trade.reasoning || "Razón no especificada"}
+            </div>
           </div>
         );
       })}
