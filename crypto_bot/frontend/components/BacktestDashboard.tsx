@@ -200,27 +200,11 @@ export const BacktestDashboard = () => {
                 <ResultCard title="Final Equity" value={`$${results.summary.final_balance.toFixed(2)}`} />
               </div>
 
-              <div className="grid grid-cols-1 gap-6">
-                <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6">
-                   <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase">Price & Trades</h3>
-                      <div className="flex gap-4 text-[10px] font-mono">
-                         <span className="flex items-center gap-1 text-emerald-500"><TrendingUp className="w-3 h-3" /> Buy</span>
-                         <span className="flex items-center gap-1 text-rose-500"><TrendingUp className="w-3 h-3 rotate-180" /> Sell</span>
-                      </div>
-                   </div>
-                   <div className="h-[400px]">
-                      <BacktestPriceChart data={results.price_data} markers={results.markers} />
-                   </div>
-                </div>
-
-                <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6">
-                  <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase mb-4">Equity Growth</h3>
-                  <div className="h-[250px]">
-                    <EquityChart data={results.equity_curve} />
-                  </div>
-                </div>
-              </div>
+              <BacktestVisualizer 
+                priceData={results.price_data} 
+                equityData={results.equity_curve} 
+                markers={results.markers} 
+              />
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-white/5 rounded-2xl bg-black/20">
@@ -247,99 +231,115 @@ const ResultCard = ({ title, value, subValue, positive }: { title: string, value
   </div>
 );
 
-const BacktestPriceChart = ({ data, markers }: { data: PricePoint[], markers: any[] }) => {
-  const containerRef = React.useRef<HTMLDivElement>(null);
+const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: PricePoint[], equityData: EquityPoint[], markers: any[] }) => {
+  const priceContainerRef = React.useRef<HTMLDivElement>(null);
+  const equityContainerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!priceContainerRef.current || !equityContainerRef.current) return;
 
-    const chart = createChart(containerRef.current, {
+    const commonOptions = {
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: "#71717a" },
       grid: { vertLines: { color: "rgba(255,255,255,0.03)" }, horzLines: { color: "rgba(255,255,255,0.03)" } },
-      width: containerRef.current.clientWidth,
-      height: containerRef.current.clientHeight,
       timeScale: { borderColor: "rgba(255,255,255,0.1)", timeVisible: true },
-    });
-
-    // Robust series creation
-    const addFn = (chart: any) => {
-       if (chart.addCandlestickSeries) return chart.addCandlestickSeries.bind(chart);
-       return (options: any) => chart.addSeries(CandlestickSeries, options);
     };
 
-    const series = addFn(chart)({
+    const priceChart = createChart(priceContainerRef.current, {
+      ...commonOptions,
+      width: priceContainerRef.current.clientWidth,
+      height: priceContainerRef.current.clientHeight,
+    });
+
+    const equityChart = createChart(equityContainerRef.current, {
+      ...commonOptions,
+      width: equityContainerRef.current.clientWidth,
+      height: equityContainerRef.current.clientHeight,
+    });
+
+    // 1. Price Series
+    // @ts-ignore
+    const priceSeries = priceChart.addCandlestickSeries ? priceChart.addCandlestickSeries({
+      upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
+    }) : priceChart.addSeries(CandlestickSeries, {
       upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
     });
 
-    series.setData(data.map(p => ({
+    priceSeries.setData(priceData.map(p => ({
       time: p.time as any,
-      open: p.open,
-      high: p.high,
-      low: p.low,
-      close: p.close
+      open: p.open, high: p.high, low: p.low, close: p.close
     })));
 
-    if (markers && markers.length > 0 && series.setMarkers) {
-      series.setMarkers(markers);
+    if (markers && markers.length > 0) {
+      priceSeries.setMarkers(markers);
     }
-    chart.timeScale().fitContent();
 
-    const handleResize = () => chart.applyOptions({ width: containerRef.current?.clientWidth });
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-    };
-  }, [data, markers]);
-
-  return <div ref={containerRef} className="w-full h-full" />;
-};
-
-const EquityChart = ({ data }: { data: EquityPoint[] }) => {
-  const chartContainerRef = React.useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!chartContainerRef.current) return;
-
-    const chart = createChart(chartContainerRef.current, {
-      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: "#71717a" },
-      grid: { vertLines: { color: "rgba(255,255,255,0.03)" }, horzLines: { color: "rgba(255,255,255,0.03)" } },
-      width: chartContainerRef.current.clientWidth,
-      height: chartContainerRef.current.clientHeight,
-      timeScale: { borderColor: "rgba(255,255,255,0.1)" },
+    // 2. Equity Series
+    // @ts-ignore
+    const areaSeries = equityChart.addAreaSeries ? equityChart.addAreaSeries({
+      lineColor: "#3b82f6",
+      topColor: "rgba(59, 130, 246, 0.4)",
+      bottomColor: "rgba(59, 130, 246, 0.05)",
+      lineWidth: 2,
+    }) : equityChart.addSeries(AreaSeries, {
+      lineColor: "#3b82f6",
+      topColor: "rgba(59, 130, 246, 0.4)",
+      bottomColor: "rgba(59, 130, 246, 0.05)",
+      lineWidth: 2,
     });
 
-    try {
-      const addFn = (chart: any) => {
-         if (chart.addAreaSeries) return chart.addAreaSeries.bind(chart);
-         return (options: any) => chart.addSeries(AreaSeries, options);
-      };
+    areaSeries.setData(equityData.map(p => ({
+      time: p.time as any,
+      value: p.equity
+    })));
 
-      const areaSeries = addFn(chart)({
-        lineColor: "#3b82f6",
-        topColor: "rgba(59, 130, 246, 0.4)",
-        bottomColor: "rgba(59, 130, 246, 0.05)",
-        lineWidth: 2,
+    // 3. Synchronization
+    let isSyncing = false;
+    const sync = (src: any, dst: any) => {
+      src.timeScale().subscribeVisibleLogicalRangeChange((range: any) => {
+        if (range && !isSyncing) {
+          isSyncing = true;
+          dst.timeScale().setVisibleLogicalRange(range);
+          isSyncing = false;
+        }
       });
+    };
 
-      if (data && data.length > 0) {
-        areaSeries.setData(data.map(p => ({
-           time: p.time as any,
-           value: p.equity
-        })));
-        chart.timeScale().fitContent();
-      }
-    } catch (err) {
-       console.error("Equity chart error", err);
-    }
+    sync(priceChart, equityChart);
+    sync(equityChart, priceChart);
 
-    const handleResize = () => chart.applyOptions({ width: chartContainerRef.current?.clientWidth });
+    priceChart.timeScale().fitContent();
+    equityChart.timeScale().fitContent();
+
+    const handleResize = () => {
+      priceChart.applyOptions({ width: priceContainerRef.current?.clientWidth });
+      equityChart.applyOptions({ width: equityContainerRef.current?.clientWidth });
+    };
+
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
-      chart.remove();
+      priceChart.remove();
+      equityChart.remove();
     };
-  }, [data]);
+  }, [priceData, equityData, markers]);
 
-  return <div ref={chartContainerRef} className="w-full h-full" />;
+  return (
+    <div className="grid grid-cols-1 gap-6">
+      <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase">Price & Trades</h3>
+            <div className="flex gap-4 text-[10px] font-mono">
+                <span className="flex items-center gap-1 text-emerald-500"><TrendingUp className="w-3 h-3" /> Buy</span>
+                <span className="flex items-center gap-1 text-rose-500"><TrendingUp className="w-3 h-3 rotate-180" /> Sell</span>
+            </div>
+          </div>
+          <div ref={priceContainerRef} className="h-[400px] w-full" />
+      </div>
+
+      <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6">
+        <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase mb-4">Equity Growth</h3>
+        <div ref={equityContainerRef} className="h-[250px] w-full" />
+      </div>
+    </div>
+  );
 };
