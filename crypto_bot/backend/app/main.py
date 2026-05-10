@@ -7,6 +7,7 @@ from app.api.market import router as market_router
 from app.api.news import router as news_router
 from app.api.strategies import router as strategies_router
 from app.api.execution import router as execution_router
+from app.api.backtest import router as backtest_router
 from loguru import logger
 
 # Initialize global logging
@@ -23,6 +24,7 @@ app.include_router(market_router, prefix=settings.API_V1_STR)
 app.include_router(news_router, prefix=settings.API_V1_STR)
 app.include_router(strategies_router, prefix=settings.API_V1_STR)
 app.include_router(execution_router, prefix=settings.API_V1_STR)
+app.include_router(backtest_router, prefix=settings.API_V1_STR)
 
 # Configure CORS for local Next.js instance
 if settings.BACKEND_CORS_ORIGINS:

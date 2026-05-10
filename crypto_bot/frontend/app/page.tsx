@@ -9,9 +9,11 @@ import { Activity, Settings } from "lucide-react";
 import { ActiveSignals } from "@/components/ActiveSignals";
 import { SignalHistory } from "@/components/SignalHistory";
 import { PerformanceWidget, OpenPositionsWidget, RecentTradesWidget, RiskStatusWidget } from "@/components/Portfolio";
+import { BacktestDashboard } from "@/components/BacktestDashboard";
 
 export default function TerminalDashboard() {
   const [timeframe, setTimeframe] = useState("1h");
+  const [activeView, setActiveView] = useState<"terminal" | "backtest">("terminal");
 
   return (
     <div className="h-screen w-screen bg-[#050505] text-zinc-200 flex flex-col overflow-hidden font-sans selection:bg-blue-500/30">
@@ -27,8 +29,18 @@ export default function TerminalDashboard() {
           </div>
           <div className="h-4 w-[1px] bg-white/10"></div>
           <div className="flex gap-4 text-xs font-medium text-zinc-400">
-            <span className="text-blue-500 cursor-pointer">Terminal</span>
-            <span className="hover:text-zinc-200 cursor-pointer transition-colors">Backtest</span>
+            <span 
+              onClick={() => setActiveView("terminal")}
+              className={`${activeView === "terminal" ? "text-blue-500" : "hover:text-zinc-200"} cursor-pointer transition-colors`}
+            >
+              Terminal
+            </span>
+            <span 
+              onClick={() => setActiveView("backtest")}
+              className={`${activeView === "backtest" ? "text-blue-500" : "hover:text-zinc-200"} cursor-pointer transition-colors`}
+            >
+              Backtest
+            </span>
             <span className="hover:text-zinc-200 cursor-pointer transition-colors">Portfolios</span>
           </div>
           <div className="h-4 w-[1px] bg-white/10 ml-2"></div>
@@ -58,9 +70,12 @@ export default function TerminalDashboard() {
 
       {/* Main Workspace */}
       <div className="flex-1 flex overflow-hidden">
-        
-        {/* LEFT PANEL */}
-        <div className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
+        {activeView === "backtest" ? (
+          <BacktestDashboard />
+        ) : (
+          <div className="flex-1 flex overflow-hidden">
+            {/* LEFT PANEL */}
+            <div className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
           <PanelSection title="WATCHLIST">
             <div className="flex justify-between items-center py-1 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
               <div className="flex gap-2 items-center">
@@ -108,8 +123,10 @@ export default function TerminalDashboard() {
         </div>
       </div>
 
-      {/* BOTTOM PANEL - Resizable */}
-      <BottomPanel />
+            <BottomPanel />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
