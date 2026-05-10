@@ -205,6 +205,48 @@ export const BacktestDashboard = () => {
                 equityData={results.equity_curve} 
                 markers={results.markers} 
               />
+
+              {/* Trade History Table */}
+              <div className="bg-[#0a0a0a] border border-white/5 rounded-xl overflow-hidden">
+                 <div className="p-6 border-b border-white/5 flex justify-between items-center">
+                    <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase">Simulation Trade Log</h3>
+                    <span className="text-[10px] text-zinc-500 font-mono">Last {results.trades.length} entries</span>
+                 </div>
+                 <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                       <thead className="bg-black/50 text-zinc-500 font-bold uppercase tracking-widest text-[9px]">
+                          <tr>
+                             <th className="px-6 py-4">Exit Time</th>
+                             <th className="px-6 py-4">Side</th>
+                             <th className="px-6 py-4">Entry</th>
+                             <th className="px-6 py-4">Exit</th>
+                             <th className="px-6 py-4">PNL</th>
+                             <th className="px-6 py-4">Reason</th>
+                          </tr>
+                       </thead>
+                       <tbody className="divide-y divide-white/5">
+                          {results.trades.map((t, idx) => (
+                             <tr key={idx} className="hover:bg-white/5 transition-colors">
+                                <td className="px-6 py-4 font-mono text-zinc-400">{t.exit_time.split('T')[0]} {t.exit_time.split('T')[1].split('.')[0]}</td>
+                                <td className="px-6 py-4">
+                                   <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] ${t.side === 'LONG' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                                      {t.side}
+                                   </span>
+                                </td>
+                                <td className="px-6 py-4 font-mono">${t.entry.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                <td className="px-6 py-4 font-mono">${t.exit.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                <td className={`px-6 py-4 font-mono font-bold ${t.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                   {t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}
+                                </td>
+                                <td className="px-6 py-4">
+                                   <span className="text-[10px] text-zinc-500 italic">{t.reason}</span>
+                                </td>
+                             </tr>
+                          ))}
+                       </tbody>
+                    </table>
+                 </div>
+              </div>
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-white/5 rounded-2xl bg-black/20">
@@ -357,20 +399,29 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
   }, [priceData, equityData, markers]);
 
   return (
-    <div className="grid grid-cols-1 gap-6">
+    <div className="grid grid-cols-1 gap-6 pb-10">
+      {/* Price Chart */}
       <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase">Price & Trades</h3>
+            <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase">Price & Entry/Exit Points</h3>
             <div className="flex gap-4 text-[10px] font-mono">
-                <span className="flex items-center gap-1 text-emerald-500"><TrendingUp className="w-3 h-3" /> Buy</span>
-                <span className="flex items-center gap-1 text-rose-500"><TrendingUp className="w-3 h-3 rotate-180" /> Sell</span>
+                <span className="flex items-center gap-2 text-emerald-500">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]" /> Buy
+                </span>
+                <span className="flex items-center gap-2 text-rose-500">
+                  <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_5px_#ef4444]" /> Sell
+                </span>
+                <span className="flex items-center gap-2 text-amber-500">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_5px_#f59e0b]" /> Exit
+                </span>
             </div>
           </div>
-          <div ref={priceContainerRef} className="h-[400px] w-full" />
+          <div ref={priceContainerRef} className="h-[450px] w-full" />
       </div>
 
+      {/* Equity Chart */}
       <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6">
-        <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase mb-4">Equity Growth</h3>
+        <h3 className="text-xs font-bold text-zinc-500 tracking-widest uppercase mb-4">Account Equity (USD)</h3>
         <div ref={equityContainerRef} className="h-[250px] w-full" />
       </div>
     </div>
