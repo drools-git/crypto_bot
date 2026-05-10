@@ -98,6 +98,10 @@ export const BacktestDashboard = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: selectedFile, initial_balance: 100000.0 })
       });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "Backtest execution failed");
+      }
       const data = await res.json();
       setResults(data);
     } catch (e) {

@@ -52,7 +52,7 @@ class BacktestEngine:
                     if hit_sl or hit_tp:
                         exit_price = position["sl"] if hit_sl else position["tp"]
                         # Adjust for slippage on exit
-                        exec_exit = exit_price * (1 - self.slippage_pct) if side == "LONG" else exit_exit * (1 + self.slippage_pct)
+                        exec_exit = exit_price * (1 - self.slippage_pct) if side == "LONG" else exit_price * (1 + self.slippage_pct)
                         
                         # Calculate PNL
                         if side == "LONG":
