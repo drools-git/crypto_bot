@@ -261,7 +261,7 @@ const BacktestPriceChart = ({ data, markers }: { data: PricePoint[], markers: an
       timeScale: { borderColor: "rgba(255,255,255,0.1)", timeVisible: true },
     });
 
-    const series = chart.addSeries(CandlestickSeries, {
+    const series = chart.addCandlestickSeries({
       upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
     });
 
@@ -273,7 +273,9 @@ const BacktestPriceChart = ({ data, markers }: { data: PricePoint[], markers: an
       close: p.close
     })));
 
-    series.setMarkers(markers);
+    if (markers && markers.length > 0) {
+      series.setMarkers(markers);
+    }
     chart.timeScale().fitContent();
 
     const handleResize = () => chart.applyOptions({ width: containerRef.current?.clientWidth });
