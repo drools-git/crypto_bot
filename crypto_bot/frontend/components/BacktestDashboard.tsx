@@ -28,6 +28,7 @@ export const BacktestDashboard = () => {
   const [selectedFile, setSelectedFile] = useState("");
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<{ summary: BacktestSummary, equity_curve: EquityPoint[] } | null>(null);
 
   const fetchFiles = async () => {
@@ -45,6 +46,29 @@ export const BacktestDashboard = () => {
   useEffect(() => {
     fetchFiles();
   }, []);
+
+  // Progress Polling
+  useEffect(() => {
+    let interval: any;
+    if (loading) {
+      interval = setInterval(async () => {
+        try {
+          const host = window.location.hostname || "localhost";
+          const res = await fetch(`http://${host}:8000/api/v1/backtest/progress`);
+          const data = await res.json();
+          setProgress(data.progress);
+          if (!data.is_running && data.progress === 100) {
+            clearInterval(interval);
+          }
+        } catch (e) {
+          console.error("Progress poll failed");
+        }
+      }, 500);
+    } else {
+      setProgress(0);
+    }
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -66,6 +90,7 @@ export const BacktestDashboard = () => {
   const runBacktest = async () => {
     if (!selectedFile) return;
     setLoading(true);
+    setResults(null);
     try {
       const host = window.location.hostname || "localhost";
       const res = await fetch(`http://${host}:8000/api/v1/backtest/run`, {
@@ -121,13 +146,22 @@ export const BacktestDashboard = () => {
                 </div>
               ))}
             </div>
-            <button 
-              onClick={runBacktest}
-              disabled={loading || !selectedFile}
-              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white py-3 rounded-lg font-bold text-sm transition-all"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              {loading ? "Running Simulation..." : "Run Backtest"}
+              {loading ? (
+                <div className="w-full space-y-2">
+                  <div className="flex justify-between text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+                    <span>Simulating...</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ) : (
+                "Run Backtest"
+              )}
             </button>
           </div>
         </div>
@@ -187,20 +221,25 @@ const EquityChart = ({ data }: { data: EquityPoint[] }) => {
       timeScale: { borderColor: "rgba(255,255,255,0.1)" },
     });
 
-    const areaSeries = chart.addAreaSeries({
-      lineColor: "#3b82f6",
-      topColor: "rgba(59, 130, 246, 0.4)",
-      bottomColor: "rgba(59, 130, 246, 0.05)",
-      lineWidth: 2,
-    });
+    // In v5, methods are the same but let's be defensive
+    try {
+      const areaSeries = chart.addAreaSeries({
+        lineColor: "#3b82f6",
+        topColor: "rgba(59, 130, 246, 0.4)",
+        bottomColor: "rgba(59, 130, 246, 0.05)",
+        lineWidth: 2,
+      });
 
-    const chartData = data.map(p => ({
-       time: p.time as any,
-       value: p.equity
-    }));
+      const chartData = data.map(p => ({
+         time: p.time as any,
+         value: p.equity
+      }));
 
-    areaSeries.setData(chartData);
-    chart.timeScale().fitContent();
+      areaSeries.setData(chartData);
+      chart.timeScale().fitContent();
+    } catch (err) {
+      console.error("Chart series error:", err);
+    }
 
     const handleResize = () => {
       chart.applyOptions({ width: chartContainerRef.current?.clientWidth });

@@ -34,3 +34,10 @@ async def run_backtest(req: RunRequest):
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/progress")
+async def get_backtest_progress():
+    return {
+        "progress": backtest_engine.progress,
+        "is_running": backtest_engine.is_running
+    }
