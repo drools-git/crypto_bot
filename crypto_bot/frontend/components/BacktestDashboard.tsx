@@ -146,6 +146,11 @@ export const BacktestDashboard = () => {
                 </div>
               ))}
             </div>
+            <button 
+              onClick={runBacktest}
+              disabled={loading || !selectedFile}
+              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white py-3 rounded-lg font-bold text-sm transition-all"
+            >
               {loading ? (
                 <div className="w-full space-y-2">
                   <div className="flex justify-between text-[10px] font-bold text-blue-400 uppercase tracking-widest">
@@ -160,7 +165,10 @@ export const BacktestDashboard = () => {
                   </div>
                 </div>
               ) : (
-                "Run Backtest"
+                <>
+                  <Play className="w-4 h-4 fill-current" />
+                  Run Backtest
+                </>
               )}
             </button>
           </div>
