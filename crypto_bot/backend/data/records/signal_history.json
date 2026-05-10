@@ -8,9 +8,9 @@
     "reasoning": [
       "Order Flow Confirmation"
     ],
-    "unrealized_pnl": 0.09,
+    "unrealized_pnl": 0.05,
     "status": "OPEN",
-    "current_price": 80754.35
+    "current_price": 80720.1
   },
   {
     "id": "2026-05-09T23:49:40.226217+00:00",
@@ -21,9 +21,9 @@
     "reasoning": [
       "Order Flow Confirmation"
     ],
-    "unrealized_pnl": 0.08,
+    "unrealized_pnl": 0.04,
     "status": "OPEN",
-    "current_price": 80754.35
+    "current_price": 80720.1
   },
   {
     "id": "2026-05-09T23:47:03.408645+00:00",
@@ -34,8 +34,8 @@
     "reasoning": [
       "Order Flow Confirmation"
     ],
-    "unrealized_pnl": 0.11,
+    "unrealized_pnl": 0.07,
     "status": "OPEN",
-    "current_price": 80754.35
+    "current_price": 80720.1
   }
 ]

@@ -53,8 +53,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT" }: { symbol?: string }) => {
     return () => clearInterval(iv);
   }, [symbol]);
 
-  const signals = data?.signals || [];
-  const active = signals.filter((s) => s.signal !== "HOLD" || s.confidence > 0);
+  const active = data?.signals || [];
 
   return (
     <div className="flex flex-col gap-2 h-full overflow-y-auto">
