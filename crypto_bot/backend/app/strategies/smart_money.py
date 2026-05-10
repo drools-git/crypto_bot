@@ -104,7 +104,7 @@ class SmartMoneyStrategy(BaseStrategy):
             reason = " | ".join(state_text) if state_text else "Sin desequilibrios (Imbalances) detectados."
             
             self._last_signal = SignalType.HOLD
-            self._confidence  = 0.20  # Partial confidence to show it's tracking structure
+            self._confidence  = 0.0  # Confianza cero para no afectar el consenso cuando es neutro
             self._reasoning   = f"Estructura neutra. {reason}"
 
     def generate_signal(self) -> Signal:

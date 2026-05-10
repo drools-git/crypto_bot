@@ -34,6 +34,7 @@ type PortfolioData = {
   total_equity: number;
   unrealized_pnl: number;
   realized_pnl: number;
+  total_fees: number;
   positions: Position[];
 };
 
@@ -87,6 +88,10 @@ export const PerformanceWidget = () => {
         <span className={`font-mono ${rColor}`}>{formatCurrency(portfolio.realized_pnl)}</span>
       </div>
       <div className="flex justify-between items-end mt-2 pt-2 border-t border-white/5">
+        <span className="text-xs text-zinc-500">Total Fees Paid</span>
+        <span className="font-mono text-amber-500/80">{formatCurrency(portfolio.total_fees)}</span>
+      </div>
+      <div className="flex justify-between items-end mt-1">
         <span className="text-xs text-zinc-500">Total Equity</span>
         <span className="font-mono text-zinc-200 font-bold">${portfolio.total_equity.toFixed(2)}</span>
       </div>
@@ -131,16 +136,16 @@ export const OpenPositionsWidget = () => {
               <span>Size: {pos.size_base.toFixed(4)}</span>
               <span>Entry: ${pos.entry_price.toFixed(2)}</span>
             </div>
-            {(pos.stop_loss || pos.take_profit) && (
-              <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mt-0.5 border-t border-white/5 pt-1">
-                {pos.stop_loss && <span className="text-rose-500/80">SL: ${pos.stop_loss.toFixed(2)}</span>}
-                {pos.take_profit && <span className="text-emerald-500/80">TP: ${pos.take_profit.toFixed(2)}</span>}
-              </div>
-            )}
             <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 mt-0.5">
               <span>Cost: ${pos.cost.toFixed(2)}</span>
               <span>Mark: ${pos.current_price.toFixed(2)}</span>
             </div>
+            {(pos.stop_loss || pos.take_profit) && (
+              <div className="flex items-center justify-between text-[10px] font-mono text-zinc-300 mt-1.5 border-t border-white/10 pt-1.5 bg-white/[0.02] -mx-2 px-2 pb-1">
+                {pos.stop_loss && <span className="text-rose-400 font-bold">Stop Loss: ${pos.stop_loss.toFixed(2)}</span>}
+                {pos.take_profit && <span className="text-emerald-400 font-bold">Take Profit: ${pos.take_profit.toFixed(2)}</span>}
+              </div>
+            )}
           </div>
         );
       })}

@@ -18,6 +18,7 @@ class PaperTradingEngine:
         self.balance = initial_balance
         self.positions: Dict[str, Dict[str, Any]] = {}
         self.equity_curve: List[Dict[str, Any]] = []
+        self.total_fees_paid = 0.0
         
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         self._load()
@@ -33,8 +34,16 @@ class PaperTradingEngine:
             except Exception as e:
                 logger.error(f"Failed to load portfolio: {e}")
 
-        # If no CSV, initialize it
-        if not TRADES_FILE.exists():
+        if TRADES_FILE.exists():
+            # Calculate total fees from history
+            try:
+                with open(TRADES_FILE, "r", encoding="utf-8") as f:
+                    lines = f.readlines()[1:]
+                    fees = [float(line.split(",")[8]) for line in lines if line.strip() and len(line.split(",")) > 8]
+                    self.total_fees_paid = sum(fees)
+            except Exception as e:
+                logger.error(f"Failed to calculate fees from CSV: {e}")
+        else:
             with open(TRADES_FILE, "w", encoding="utf-8") as f:
                 f.write("trade_id,timestamp,symbol,side,type,price,size_base,size_quote,fee,realized_pnl,reasoning\n")
 
@@ -69,9 +78,16 @@ class PaperTradingEngine:
             elif pos["side"] == "SHORT":
                 pnl = (pos["entry_price"] - price) * pos["size_base"]
             
-            # Check SL / TP
+            # Check SL / TP (Inject default if it's an old position missing it)
             sl = pos.get("stop_loss")
             tp = pos.get("take_profit")
+            
+            if not sl or not tp:
+                sl_pct, tp_pct = 0.015, 0.045
+                sl = pos["entry_price"] * (1 - sl_pct) if pos["side"] == "LONG" else pos["entry_price"] * (1 + sl_pct)
+                tp = pos["entry_price"] * (1 + tp_pct) if pos["side"] == "LONG" else pos["entry_price"] * (1 - tp_pct)
+                self.positions[sym]["stop_loss"] = sl
+                self.positions[sym]["take_profit"] = tp
             
             pnl_pct = (pnl / pos["cost"]) * 100 if pos["cost"] > 0 else 0
             unrealized_pnl += pnl
@@ -106,6 +122,7 @@ class PaperTradingEngine:
             "total_equity": total_equity,
             "unrealized_pnl": unrealized_pnl,
             "realized_pnl": total_equity - self.initial_balance - unrealized_pnl,
+            "total_fees": self.total_fees_paid,
             "positions": enriched_positions
         }
 
@@ -150,6 +167,7 @@ class PaperTradingEngine:
         fee = alloc_quote * self.fee_rate
         cost = alloc_quote
         self.balance -= (cost + fee)
+        self.total_fees_paid += fee
 
         # Define SL / TP (using standard defaults, normally fetched from strategy)
         sl_pct = 0.015
@@ -208,6 +226,7 @@ class PaperTradingEngine:
         fee = value_quote * self.fee_rate
         net_return = value_quote - fee
         self.balance += net_return
+        self.total_fees_paid += fee
 
         realized_pnl = net_return - pos["cost"]
 
