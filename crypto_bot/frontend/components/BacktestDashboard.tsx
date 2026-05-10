@@ -318,20 +318,23 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
 
     if (priceSeries) {
       priceSeries.setData(priceData.map(p => ({
-        time: p.time as any,
+        time: Number(p.time) as any,
         open: p.open, high: p.high, low: p.low, close: p.close
       })));
 
       if (markers && markers.length > 0) {
         try {
+          const formattedMarkers = markers.map(m => ({
+            ...m,
+            time: Number(m.time) as any,
+            size: 2, // Increase size
+          })).sort((a, b) => a.time - b.time);
+          
           if (typeof priceSeries.setMarkers === 'function') {
-            priceSeries.setMarkers(markers);
-          } else if (typeof priceSeries.applyOptions === 'function') {
-            // Some versions handle markers in options
-            priceSeries.applyOptions({ markers });
+            priceSeries.setMarkers(formattedMarkers);
           }
         } catch (mErr) {
-          console.error("Failed to set markers", mErr);
+          console.error("Failed to set markers on price chart", mErr);
         }
       }
     }
@@ -362,14 +365,19 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
 
     if (areaSeries) {
       areaSeries.setData(equityData.map(p => ({
-        time: p.time as any,
+        time: Number(p.time) as any,
         value: p.equity
       })));
 
       if (markers && markers.length > 0) {
         try {
           if (typeof areaSeries.setMarkers === 'function') {
-             areaSeries.setMarkers(markers);
+             areaSeries.setMarkers(markers.map(m => ({
+               ...m,
+               time: Number(m.time) as any,
+               position: 'inBar', // Better for lines
+               size: 1
+             })).sort((a,b) => a.time - b.time));
           }
         } catch (e) {
            console.error("Failed to set markers on equity chart", e);
