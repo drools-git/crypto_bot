@@ -76,8 +76,8 @@ export default function TerminalDashboard() {
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 flex overflow-hidden">
               {/* LEFT PANEL */}
-              <div className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
-                <PanelSection title="WATCHLIST">
+              <div className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0 h-full">
+                <PanelSection title="WATCHLIST" className="shrink-0">
                   <div className="flex justify-between items-center py-1 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
                     <div className="flex gap-2 items-center">
                       <span className="font-mono text-xs font-bold text-zinc-200">BTC/USDT</span>
@@ -85,13 +85,13 @@ export default function TerminalDashboard() {
                     <span className="font-mono text-xs text-emerald-500">+2.4%</span>
                   </div>
                 </PanelSection>
-                <PanelSection title="ACTIVE SIGNALS" flex>
+                <PanelSection title="ACTIVE SIGNALS" className="flex-[2] overflow-hidden" flex>
                   <ActiveSignals symbol="BTC/USDT" timeframe={timeframe} />
                 </PanelSection>
-                <PanelSection title="SIGNAL HISTORY" flex>
+                <PanelSection title="SIGNAL HISTORY" className="flex-1 overflow-hidden" flex>
                   <SignalHistory />
                 </PanelSection>
-                <PanelSection title="LATEST NEWS">
+                <PanelSection title="LATEST NEWS" className="flex-1 overflow-hidden">
                   <NewsFeed />
                 </PanelSection>
               </div>

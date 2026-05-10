@@ -30,6 +30,7 @@ const SIGNAL_CONFIG = {
 export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbol?: string, timeframe?: string }) => {
   const [data, setData] = useState<ConsensusData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchSignals = async () => {
     try {
@@ -40,8 +41,9 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
       if (!res.ok) throw new Error("Fetch failed");
       const json: ConsensusData = await res.json();
       setData(json);
-    } catch {
-      // silently retry on next interval
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,12 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
           Analyzing strategies...
         </span>
       )}
-      {!loading && active.length === 0 && (
+      {error && !loading && (
+        <span className="text-[10px] font-mono text-rose-500 bg-rose-500/10 p-2 rounded border border-rose-500/20">
+          Error: {error}
+        </span>
+      )}
+      {!loading && !error && active.length === 0 && (
         <span className="text-[10px] font-mono text-zinc-600 opacity-50">
           No active signals
         </span>
