@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Play, Download, FileText, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
-import { createChart, ColorType } from "lightweight-charts";
+import { createChart, ColorType, AreaSeries, LineSeries } from "lightweight-charts";
 
 type HistoryFile = {
   filename: string;
@@ -235,33 +235,34 @@ const EquityChart = ({ data }: { data: EquityPoint[] }) => {
     });
 
     try {
-      // Use standard v5 method with existence check
-      if (chart.addAreaSeries) {
-        const areaSeries = chart.addAreaSeries({
-          lineColor: "#3b82f6",
-          topColor: "rgba(59, 130, 246, 0.4)",
-          bottomColor: "rgba(59, 130, 246, 0.05)",
-          lineWidth: 2,
-        });
+      // Correct v5 series addition
+      const areaSeries = chart.addSeries(AreaSeries, {
+        lineColor: "#3b82f6",
+        topColor: "rgba(59, 130, 246, 0.4)",
+        bottomColor: "rgba(59, 130, 246, 0.05)",
+        lineWidth: 2,
+      });
 
-        if (data && data.length > 0) {
-          const chartData = data.map(p => ({
-             time: p.time as any,
-             value: p.equity
-          }));
-          areaSeries.setData(chartData);
-          chart.timeScale().fitContent();
-        }
-      } else {
-        // Safe fallback
-        const lineSeries = chart.addLineSeries({ color: "#3b82f6", lineWidth: 2 });
+      if (data && data.length > 0) {
+        const chartData = data.map(p => ({
+           time: p.time as any,
+           value: p.equity
+        }));
+        areaSeries.setData(chartData);
+        chart.timeScale().fitContent();
+      }
+    } catch (err) {
+      console.error("Chart series error:", err);
+      // Fallback
+      try {
+        const lineSeries = chart.addSeries(LineSeries, { color: "#3b82f6", lineWidth: 2 });
         if (data && data.length > 0) {
           lineSeries.setData(data.map(p => ({ time: p.time as any, value: p.equity })));
           chart.timeScale().fitContent();
         }
+      } catch (inner) {
+        console.error("Critical chart error:", inner);
       }
-    } catch (err) {
-      console.error("Chart series error:", err);
     }
 
     const handleResize = () => {
