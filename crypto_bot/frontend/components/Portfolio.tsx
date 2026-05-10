@@ -81,6 +81,11 @@ export const PerformanceWidget = () => {
 
   return (
     <div className="p-4 flex flex-col gap-2 flex-1 justify-center overflow-hidden">
+      <div className="flex justify-center mb-2">
+        <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase">
+          🤖 Bot Execution: 1H Intraday
+        </span>
+      </div>
       <div className="flex justify-between items-end">
         <span className="text-xs text-zinc-500">Unrealized PNL</span>
         <span className={`font-mono ${urColor}`}>{formatCurrency(portfolio.unrealized_pnl)}</span>

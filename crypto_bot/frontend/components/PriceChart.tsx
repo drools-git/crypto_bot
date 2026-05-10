@@ -5,6 +5,7 @@ import { createChart, ColorType, IChartApi, CandlestickSeries, LineSeries, Histo
 
 interface PriceChartProps {
   symbol: string;
+  timeframe?: string;
 }
 
 // Draggable divider component
@@ -31,7 +32,7 @@ const Divider: React.FC<{ onDrag: (delta: number) => void }> = ({ onDrag }) => {
   );
 };
 
-export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
+export const PriceChart: React.FC<PriceChartProps> = ({ symbol, timeframe = "1h" }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
   const rsiRef = useRef<HTMLDivElement>(null);
@@ -252,7 +253,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     const fetchData = async () => {
       try {
         const host = window.location.hostname || 'localhost';
-        const response = await fetch(`http://${host}:8000/api/v1/market/indicators?symbol=${symbol}&timeframe=1h&limit=900`);
+        const response = await fetch(`http://${host}:8000/api/v1/market/indicators?symbol=${symbol}&timeframe=${timeframe}&limit=900`);
         const data = await response.json();
 
         if (Array.isArray(data) && data.length > 0) {
@@ -337,7 +338,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
 
           // Connect WS for live price updates
           const stream = symbol.toLowerCase().replace('/', '');
-          ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}@kline_1h`);
+          ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}@kline_${timeframe}`);
           ws.onmessage = (event) => {
             const message = JSON.parse(event.data);
             if (message.k) {
@@ -394,7 +395,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
       adxChart.remove();
       chartsRef.current = {};
     };
-  }, [symbol]);
+  }, [symbol, timeframe]);
 
   return (
     <div ref={containerRef} className="relative w-full h-full flex flex-col overflow-hidden">

@@ -11,6 +11,8 @@ import { SignalHistory } from "@/components/SignalHistory";
 import { PerformanceWidget, OpenPositionsWidget, RecentTradesWidget } from "@/components/Portfolio";
 
 export default function TerminalDashboard() {
+  const [timeframe, setTimeframe] = useState("1h");
+
   return (
     <div className="h-screen w-screen bg-[#050505] text-zinc-200 flex flex-col overflow-hidden font-sans selection:bg-blue-500/30">
       
@@ -28,6 +30,20 @@ export default function TerminalDashboard() {
             <span className="text-blue-500 cursor-pointer">Terminal</span>
             <span className="hover:text-zinc-200 cursor-pointer transition-colors">Backtest</span>
             <span className="hover:text-zinc-200 cursor-pointer transition-colors">Portfolios</span>
+          </div>
+          <div className="h-4 w-[1px] bg-white/10 ml-2"></div>
+          <div className="flex items-center gap-2 ml-2">
+            <span className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">Chart TF:</span>
+            <select 
+              value={timeframe} 
+              onChange={(e) => setTimeframe(e.target.value)}
+              className="bg-[#111] border border-white/10 text-zinc-300 text-xs px-2 py-0.5 rounded outline-none focus:border-blue-500/50 transition-colors"
+            >
+              <option value="15m">15m</option>
+              <option value="1h">1H</option>
+              <option value="4h">4H</option>
+              <option value="1d">1D</option>
+            </select>
           </div>
         </div>
         
@@ -61,7 +77,7 @@ export default function TerminalDashboard() {
           </PanelSection>
           
           <PanelSection title="ACTIVE SIGNALS" className="flex-[3] overflow-hidden">
-            <ActiveSignals symbol="BTC/USDT" />
+            <ActiveSignals symbol="BTC/USDT" timeframe={timeframe} />
           </PanelSection>
           
           <PanelSection title="MARKET INTELLIGENCE" className="flex-[2] overflow-hidden">
@@ -71,13 +87,13 @@ export default function TerminalDashboard() {
 
         {/* CENTER PANEL */}
         <div className="flex-1 bg-[#000000] relative flex flex-col">
-          <div className="absolute top-14 left-4 z-10 flex gap-4 pointer-events-none">
+           <div className="absolute top-14 left-4 z-10 flex gap-4 pointer-events-none">
              <div className="bg-[#0a0a0a]/80 backdrop-blur border border-white/10 px-3 py-1.5 rounded flex items-center gap-3 shadow-lg">
                <span className="font-mono text-lg font-bold text-zinc-100">BTC/USDT</span>
-               <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">1H</span>
+               <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 uppercase">{timeframe}</span>
              </div>
           </div>
-          <PriceChart symbol="BTC/USDT" />
+          <PriceChart symbol="BTC/USDT" timeframe={timeframe} />
         </div>
 
         {/* RIGHT PANEL */}

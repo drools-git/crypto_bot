@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-05-10T01:24:54.280001+00:00",
+    "symbol": "BTC/USDT",
+    "direction": "EXIT",
+    "confidence": 0.65,
+    "price": 80572.78,
+    "reasoning": [
+      "Trend Following"
+    ],
+    "unrealized_pnl": 0.0,
+    "status": "CLOSED"
+  },
+  {
     "id": "2026-05-09T23:54:15.534929+00:00",
     "symbol": "BTC/USDT",
     "direction": "LONG",
@@ -8,9 +20,10 @@
     "reasoning": [
       "Order Flow Confirmation"
     ],
-    "unrealized_pnl": -0.03,
-    "status": "OPEN",
-    "current_price": 80657.21
+    "unrealized_pnl": -0.14,
+    "status": "CLOSED",
+    "current_price": 80572.78,
+    "exit_price": 80572.78
   },
   {
     "id": "2026-05-09T23:49:40.226217+00:00",
@@ -21,9 +34,10 @@
     "reasoning": [
       "Order Flow Confirmation"
     ],
-    "unrealized_pnl": -0.04,
-    "status": "OPEN",
-    "current_price": 80657.21
+    "unrealized_pnl": -0.14,
+    "status": "CLOSED",
+    "current_price": 80572.78,
+    "exit_price": 80572.78
   },
   {
     "id": "2026-05-09T23:47:03.408645+00:00",
@@ -34,8 +48,9 @@
     "reasoning": [
       "Order Flow Confirmation"
     ],
-    "unrealized_pnl": -0.01,
-    "status": "OPEN",
-    "current_price": 80657.21
+    "unrealized_pnl": -0.11,
+    "status": "CLOSED",
+    "current_price": 80572.78,
+    "exit_price": 80572.78
   }
 ]

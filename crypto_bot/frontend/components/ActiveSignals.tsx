@@ -27,7 +27,7 @@ const SIGNAL_CONFIG = {
   HOLD:  { color: "text-zinc-500",    bg: "bg-zinc-500/10    border-zinc-500/20",    Icon: Minus },
 };
 
-export const ActiveSignals = ({ symbol = "BTC/USDT" }: { symbol?: string }) => {
+export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbol?: string, timeframe?: string }) => {
   const [data, setData] = useState<ConsensusData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +35,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT" }: { symbol?: string }) => {
     try {
       const host = window.location.hostname || "localhost";
       const res = await fetch(
-        `http://${host}:8000/api/v1/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=1h&limit=300`
+        `http://${host}:8000/api/v1/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&limit=300`
       );
       if (!res.ok) throw new Error("Fetch failed");
       const json: ConsensusData = await res.json();
@@ -48,10 +48,11 @@ export const ActiveSignals = ({ symbol = "BTC/USDT" }: { symbol?: string }) => {
   };
 
   useEffect(() => {
+    setLoading(true);
     fetchSignals();
     const iv = setInterval(fetchSignals, 60_000); // refresh every minute
     return () => clearInterval(iv);
-  }, [symbol]);
+  }, [symbol, timeframe]);
 
   const active = data?.signals || [];
 
