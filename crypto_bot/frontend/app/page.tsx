@@ -73,56 +73,48 @@ export default function TerminalDashboard() {
         {activeView === "backtest" ? (
           <BacktestDashboard />
         ) : (
-          <div className="flex-1 flex overflow-hidden">
-            {/* LEFT PANEL */}
-            <div className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
-          <PanelSection title="WATCHLIST">
-            <div className="flex justify-between items-center py-1 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
-              <div className="flex gap-2 items-center">
-                <span className="font-mono text-xs font-bold text-zinc-200">BTC/USDT</span>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex overflow-hidden">
+              {/* LEFT PANEL */}
+              <div className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
+                <PanelSection title="WATCHLIST">
+                  <div className="flex justify-between items-center py-1 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
+                    <div className="flex gap-2 items-center">
+                      <span className="font-mono text-xs font-bold text-zinc-200">BTC/USDT</span>
+                    </div>
+                    <span className="font-mono text-xs text-emerald-500">+2.4%</span>
+                  </div>
+                </PanelSection>
+                <PanelSection title="ACTIVE SIGNALS" flex>
+                  <ActiveSignals symbol="BTC/USDT" timeframe={timeframe} />
+                </PanelSection>
+                <PanelSection title="SIGNAL HISTORY" flex>
+                  <SignalHistory />
+                </PanelSection>
+                <PanelSection title="LATEST NEWS">
+                  <NewsFeed />
+                </PanelSection>
               </div>
-              <span className="font-mono text-xs text-emerald-500">+2.4%</span>
-            </div>
-            <div className="flex justify-between items-center py-1 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
-              <div className="flex gap-2 items-center">
-                <span className="font-mono text-xs font-bold text-zinc-200">ETH/USDT</span>
+
+              {/* CENTER PANEL (Chart) */}
+              <div className="flex-1 flex flex-col bg-black overflow-hidden">
+                <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
+                  <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">{timeframe} CHART - BTC/USDT</span>
+                </div>
+                <PriceChart symbol="BTC/USDT" timeframe={timeframe} />
               </div>
-              <span className="font-mono text-xs text-rose-500">-1.2%</span>
+
+              {/* RIGHT PANEL */}
+              <div className="w-[300px] border-l border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
+                <PanelSection title="ORDER BOOK" flex>
+                  <OrderBook symbol="BTC/USDT" />
+                </PanelSection>
+                
+                <PanelSection title="MARKET TRADES" flex>
+                  <TradeTape symbol="BTC/USDT" />
+                </PanelSection>
+              </div>
             </div>
-          </PanelSection>
-          
-          <PanelSection title="ACTIVE SIGNALS" className="flex-[3] overflow-hidden">
-            <ActiveSignals symbol="BTC/USDT" timeframe={timeframe} />
-          </PanelSection>
-          
-          <PanelSection title="MARKET INTELLIGENCE" className="flex-[2] overflow-hidden">
-            <NewsFeed />
-          </PanelSection>
-        </div>
-
-        {/* CENTER PANEL */}
-        <div className="flex-1 bg-[#000000] relative flex flex-col">
-           <div className="absolute top-14 left-4 z-10 flex gap-4 pointer-events-none">
-             <div className="bg-[#0a0a0a]/80 backdrop-blur border border-white/10 px-3 py-1.5 rounded flex items-center gap-3 shadow-lg">
-               <span className="font-mono text-lg font-bold text-zinc-100">BTC/USDT</span>
-               <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 uppercase">{timeframe}</span>
-             </div>
-          </div>
-          <PriceChart symbol="BTC/USDT" timeframe={timeframe} />
-        </div>
-
-        {/* RIGHT PANEL */}
-        <div className="w-[300px] border-l border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
-          <PanelSection title="ORDER BOOK" flex>
-             <OrderBook symbol="BTC/USDT" />
-          </PanelSection>
-          
-          <PanelSection title="MARKET TRADES" flex>
-             <TradeTape symbol="BTC/USDT" />
-          </PanelSection>
-        </div>
-      </div>
-
             <BottomPanel />
           </div>
         )}
