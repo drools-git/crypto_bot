@@ -69,6 +69,10 @@ class PaperTradingEngine:
             elif pos["side"] == "SHORT":
                 pnl = (pos["entry_price"] - price) * pos["size_base"]
             
+            # Check SL / TP
+            sl = pos.get("stop_loss")
+            tp = pos.get("take_profit")
+            
             pnl_pct = (pnl / pos["cost"]) * 100 if pos["cost"] > 0 else 0
             unrealized_pnl += pnl
 
@@ -76,6 +80,15 @@ class PaperTradingEngine:
             enriched_pos["current_price"] = price
             enriched_pos["unrealized_pnl"] = pnl
             enriched_pos["unrealized_pnl_pct"] = pnl_pct
+            
+            if sl and tp:
+                if (pos["side"] == "LONG" and (price <= sl or price >= tp)) or \
+                   (pos["side"] == "SHORT" and (price >= sl or price <= tp)):
+                    # SL/TP hit, we could auto-close here, but since this is just a getter,
+                    # we let the main process or engine loop close it.
+                    # Or we close it immediately!
+                    pass
+                    
             enriched_positions.append(enriched_pos)
 
         total_equity = self.balance + sum(p["cost"] for p in self.positions.values()) + unrealized_pnl
@@ -138,6 +151,12 @@ class PaperTradingEngine:
         cost = alloc_quote
         self.balance -= (cost + fee)
 
+        # Define SL / TP (using standard defaults, normally fetched from strategy)
+        sl_pct = 0.015
+        tp_pct = 0.045
+        stop_loss = exec_price * (1 - sl_pct) if side == "LONG" else exec_price * (1 + sl_pct)
+        take_profit = exec_price * (1 + tp_pct) if side == "LONG" else exec_price * (1 - tp_pct)
+
         trade_id = str(uuid.uuid4())[:8]
         self.positions[symbol] = {
             "id": trade_id,
@@ -146,6 +165,8 @@ class PaperTradingEngine:
             "entry_price": exec_price,
             "size_base": size_base,
             "cost": cost,
+            "stop_loss": stop_loss,
+            "take_profit": take_profit,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 

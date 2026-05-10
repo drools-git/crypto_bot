@@ -8,7 +8,7 @@ import { NewsFeed } from "@/components/NewsFeed";
 import { Activity, Settings } from "lucide-react";
 import { ActiveSignals } from "@/components/ActiveSignals";
 import { SignalHistory } from "@/components/SignalHistory";
-import { PerformanceWidget, OpenPositionsWidget } from "@/components/Portfolio";
+import { PerformanceWidget, OpenPositionsWidget, RecentTradesWidget } from "@/components/Portfolio";
 
 export default function TerminalDashboard() {
   return (
@@ -161,7 +161,7 @@ function BottomPanel() {
             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">RECENT TRADES</span>
           </div>
           <div className="flex-1 overflow-hidden">
-            <SignalHistory />
+            <RecentTradesWidget />
           </div>
         </div>
 

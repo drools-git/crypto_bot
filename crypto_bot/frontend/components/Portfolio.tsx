@@ -11,6 +11,22 @@ type Position = {
   current_price: number;
   unrealized_pnl: number;
   unrealized_pnl_pct: number;
+  stop_loss?: number;
+  take_profit?: number;
+};
+
+type Trade = {
+  trade_id: string;
+  timestamp: string;
+  symbol: string;
+  side: "LONG" | "SHORT";
+  type: string;
+  price: number;
+  size_base: number;
+  size_quote: number;
+  fee: number;
+  realized_pnl: number;
+  reasoning: string;
 };
 
 type PortfolioData = {
@@ -115,10 +131,83 @@ export const OpenPositionsWidget = () => {
               <span>Size: {pos.size_base.toFixed(4)}</span>
               <span>Entry: ${pos.entry_price.toFixed(2)}</span>
             </div>
-            <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
+            {(pos.stop_loss || pos.take_profit) && (
+              <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mt-0.5 border-t border-white/5 pt-1">
+                {pos.stop_loss && <span className="text-rose-500/80">SL: ${pos.stop_loss.toFixed(2)}</span>}
+                {pos.take_profit && <span className="text-emerald-500/80">TP: ${pos.take_profit.toFixed(2)}</span>}
+              </div>
+            )}
+            <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 mt-0.5">
               <span>Cost: ${pos.cost.toFixed(2)}</span>
               <span>Mark: ${pos.current_price.toFixed(2)}</span>
             </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export const RecentTradesWidget = () => {
+  const [trades, setTrades] = useState<Trade[]>([]);
+
+  useEffect(() => {
+    const fetchTrades = async () => {
+      try {
+        const host = window.location.hostname || "localhost";
+        const res = await fetch(`http://${host}:8000/api/v1/execution/trades`);
+        if (res.ok) setTrades(await res.json());
+      } catch {}
+    };
+    fetchTrades();
+    const iv = setInterval(fetchTrades, 10000);
+    return () => clearInterval(iv);
+  }, []);
+
+  if (trades.length === 0) {
+    return <div className="p-4 text-xs font-mono text-zinc-600 opacity-50">No execution history yet.</div>;
+  }
+
+  return (
+    <div className="flex flex-col gap-1 p-2 h-full overflow-y-auto">
+      {trades.map((trade) => {
+        const isLong = trade.side === "LONG";
+        const color = isLong ? "text-emerald-500" : "text-rose-500";
+        const isClose = trade.type.includes("CLOSE");
+        
+        return (
+          <div key={trade.trade_id} className="border-b border-white/5 last:border-0 py-1.5 flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className={`text-[10px] font-bold ${color}`}>{trade.side} {isClose ? "CLOSE" : "OPEN"}</span>
+              </div>
+              <span className="text-[9px] font-mono text-zinc-500">
+                {new Date(trade.timestamp).toLocaleTimeString()}
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-zinc-300">
+                @{trade.price.toFixed(2)}
+              </span>
+              <span className="text-[9px] font-mono text-zinc-400">
+                Size: {trade.size_base.toFixed(4)}
+              </span>
+            </div>
+
+            {isClose ? (
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-zinc-500">Fee: ${trade.fee.toFixed(2)}</span>
+                <span className={`text-[10px] font-mono font-bold ${trade.realized_pnl > 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                  PNL: {trade.realized_pnl > 0 ? "+" : ""}{trade.realized_pnl.toFixed(2)} USDT
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-zinc-500">Fee: ${trade.fee.toFixed(2)}</span>
+                <span className="text-[9px] font-mono text-zinc-400">Cost: ${trade.size_quote.toFixed(2)}</span>
+              </div>
+            )}
           </div>
         );
       })}

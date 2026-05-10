@@ -32,6 +32,11 @@ class SignalEngine:
         if not SIGNAL_FILE.exists():
             with open(SIGNAL_FILE, "w", encoding="utf-8") as f:
                 json.dump([], f)
+        
+        # Restore last direction
+        history = self.get_history()
+        if history:
+            self._last_direction = history[0].get("direction", "HOLD")
 
     async def start(self):
         if self._running:
@@ -147,6 +152,20 @@ class SignalEngine:
                         
                         # Process official signal in Paper Trading Engine
                         paper_trading_engine.process_signal(new_signal)
+
+                # 5. Check SL / TP for open positions
+                for sym, pos in list(paper_trading_engine.positions.items()):
+                    sl = pos.get("stop_loss")
+                    tp = pos.get("take_profit")
+                    if sl and tp:
+                        hit_sl = (pos["side"] == "LONG" and current_price <= sl) or (pos["side"] == "SHORT" and current_price >= sl)
+                        hit_tp = (pos["side"] == "LONG" and current_price >= tp) or (pos["side"] == "SHORT" and current_price <= tp)
+                        
+                        if hit_sl or hit_tp:
+                            reason = "Stop Loss hit" if hit_sl else "Take Profit hit"
+                            paper_trading_engine.close_position(sym, current_price, reason)
+                            logger.info(f"[SignalEngine] {reason} for {sym} at {current_price}")
+                            self._last_direction = "HOLD" # reset
 
                 self._save_history(history)
 
