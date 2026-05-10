@@ -7,12 +7,13 @@ export const NewsFeed = () => {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const host = window.location.hostname || 'localhost';
+        const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
         const res = await fetch(`http://${host}:8000/api/v1/news/latest?limit=15`);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setNews(data);
-      } catch(e) {
-        console.error("Failed to fetch news");
+      } catch(e: any) {
+        console.error(`News Fetch Error: ${e.message}`);
       }
     };
     fetchNews();
