@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Play, Download, FileText, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
-import { createChart, ColorType, AreaSeries, LineSeries, CandlestickSeries, IChartApi, SeriesMarker } from "lightweight-charts";
+import { createChart, ColorType, AreaSeries, LineSeries, CandlestickSeries, IChartApi, SeriesMarker, createSeriesMarkers } from "lightweight-charts";
 
 type HistoryFile = {
   filename: string;
@@ -334,11 +334,22 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
         text: 'TEST'
       };
       
-      if (typeof priceSeries.setMarkers === 'function') {
-        console.log('Setting hardcoded TEST marker at time:', testMarker.time);
-        priceSeries.setMarkers([testMarker]);
-      } else {
-        console.warn('setMarkers NOT found on priceSeries');
+      // Try all known APIs
+      try {
+        if (typeof createSeriesMarkers === 'function') {
+          console.log('Using standalone createSeriesMarkers(series, markers)');
+          createSeriesMarkers(priceSeries, [testMarker]);
+        } else if (typeof (priceSeries as any).createSeriesMarkers === 'function') {
+          console.log('Using series.createSeriesMarkers');
+          (priceSeries as any).createSeriesMarkers([testMarker]);
+        } else if (typeof priceSeries.setMarkers === 'function') {
+          console.log('Using series.setMarkers');
+          priceSeries.setMarkers([testMarker]);
+        } else {
+          console.error('No known marker API found (tried createSeriesMarkers standalone, series method, and setMarkers)');
+        }
+      } catch (err) {
+        console.error('Marker assignment failed', err);
       }
     }
 
