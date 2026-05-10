@@ -8,7 +8,7 @@ import { NewsFeed } from "@/components/NewsFeed";
 import { Activity, Settings } from "lucide-react";
 import { ActiveSignals } from "@/components/ActiveSignals";
 import { SignalHistory } from "@/components/SignalHistory";
-import { PerformanceWidget, OpenPositionsWidget, RecentTradesWidget } from "@/components/Portfolio";
+import { PerformanceWidget, OpenPositionsWidget, RecentTradesWidget, RiskStatusWidget } from "@/components/Portfolio";
 
 export default function TerminalDashboard() {
   const [timeframe, setTimeframe] = useState("1h");
@@ -183,16 +183,9 @@ function BottomPanel() {
 
         <div className="flex-1 flex flex-col">
           <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
-            <span className="text-[10px] font-bold text-zinc-500 tracking-widest">SYSTEM LOGS</span>
+            <span className="text-[10px] font-bold text-zinc-500 tracking-widest">RISK MANAGEMENT</span>
           </div>
-          <div className="p-3 text-[10px] text-zinc-500 font-mono flex flex-col gap-1.5 overflow-y-auto">
-            <span className="text-emerald-500/70">[SYS] UI Terminal initialized successfully.</span>
-            <span>[NET] Connecting to WSS Binance endpoint...</span>
-            <span className="text-blue-400/70">[NET] Subscribed to btcusdt@depth20</span>
-            <span className="text-blue-400/70">[NET] Subscribed to btcusdt@trade</span>
-            <span className="text-blue-400/70">[NET] Subscribed to btcusdt@kline_1h</span>
-            <span className="text-amber-500/70">[ENG] Strategy engine standby mode.</span>
-          </div>
+          <RiskStatusWidget />
         </div>
       </div>
     </>

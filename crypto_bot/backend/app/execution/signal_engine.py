@@ -12,6 +12,7 @@ from app.market.market_data_manager import market_data_engine
 from app.indicators.engine import indicator_engine
 from app.strategies.models import SignalType
 from app.execution.paper_trading import paper_trading_engine
+from app.execution.risk_manager import risk_manager
 
 DATA_DIR = Path("data/records")
 SIGNAL_FILE = DATA_DIR / "signal_history.json"
@@ -109,6 +110,21 @@ class SignalEngine:
                 # 2. Enrich with indicators
                 df = indicator_engine.add_indicators(df)
 
+                # 2b. Abnormal Volatility Check (Kill Switch)
+                if len(df) > 20:
+                    current_atr = df.iloc[-1]["atr"]
+                    avg_atr = df.iloc[-20:-1]["atr"].mean()
+                    if current_atr > avg_atr * 3.0:
+                        risk_manager.activate_kill_switch(f"Abnormal Volatility (ATR {current_atr:.2f} > 3x avg)")
+
+                # 2c. Connectivity Guard (Kill Switch)
+                # Check if market data engine is updating (heartbeat)
+                last_update = getattr(market_data_engine, 'last_update_time', None)
+                if last_update:
+                    elapsed = (datetime.now(timezone.utc) - last_update).total_seconds()
+                    if elapsed > 30:
+                         risk_manager.activate_kill_switch("WebSocket Connectivity Failure")
+
                 # 3. Get Consensus
                 signals = strategy_manager.run_all(df, symbol, timeframe)
                 consensus = strategy_manager.get_consensus(signals)
@@ -153,7 +169,9 @@ class SignalEngine:
                         # Process official signal in Paper Trading Engine
                         paper_trading_engine.process_signal(new_signal)
 
-                # 5. Check SL / TP for open positions
+                # 5. Dynamic Risk: Check SL / TP for open positions
+                paper_trading_engine.update_trailing_stops({symbol: current_price})
+                
                 for sym, pos in list(paper_trading_engine.positions.items()):
                     sl = pos.get("stop_loss")
                     tp = pos.get("take_profit")

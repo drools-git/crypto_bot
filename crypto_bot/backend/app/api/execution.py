@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 from app.execution.signal_engine import signal_engine
 from app.execution.paper_trading import paper_trading_engine
 from app.market.market_data_manager import market_data_engine
+from app.execution.risk_manager import risk_manager
 
 router = APIRouter(prefix="/execution", tags=["Execution"])
 
@@ -32,3 +33,7 @@ async def get_portfolio() -> Dict[str, Any]:
 async def get_recent_trades(limit: int = 10) -> List[Dict[str, Any]]:
     """Returns recent paper trades."""
     return paper_trading_engine.get_recent_trades(limit)
+
+@router.get("/risk")
+async def get_risk_status():
+    return risk_manager.get_status()

@@ -1,5 +1,18 @@
 [
   {
+    "id": "2026-05-10T03:25:33.422039+00:00",
+    "symbol": "BTC/USDT",
+    "direction": "LONG",
+    "confidence": 0.75,
+    "price": 80678.0,
+    "reasoning": [
+      "SMC / Price Action"
+    ],
+    "unrealized_pnl": 0.19,
+    "status": "OPEN",
+    "current_price": 80828.63
+  },
+  {
     "id": "2026-05-10T01:24:54.280001+00:00",
     "symbol": "BTC/USDT",
     "direction": "EXIT",

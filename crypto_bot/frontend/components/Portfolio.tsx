@@ -13,6 +13,15 @@ type Position = {
   unrealized_pnl_pct: number;
   stop_loss?: number;
   take_profit?: number;
+  total_fees?: number;
+};
+
+type RiskStatus = {
+  kill_switch_active: boolean;
+  kill_switch_reason: string;
+  daily_pnl: number;
+  consecutive_losses: number;
+  max_daily_dd_limit: number;
 };
 
 type Trade = {
@@ -160,7 +169,7 @@ export const OpenPositionsWidget = () => {
   );
 };
 
-export const RecentTradesWidget = () => {
+export const RecentTradesWidget = ({ limit = 5 }: { limit?: number }) => {
   const [trades, setTrades] = useState<Trade[]>([]);
 
   useEffect(() => {
@@ -238,3 +247,67 @@ export const RecentTradesWidget = () => {
     </div>
   );
 };
+
+export const RiskStatusWidget = () => {
+  const [risk, setRisk] = useState<RiskStatus | null>(null);
+
+  useEffect(() => {
+    const fetchRisk = async () => {
+      try {
+        const host = window.location.hostname || "localhost";
+        const res = await fetch(`http://${host}:8000/api/v1/execution/risk`);
+        const data = await res.json();
+        setRisk(data);
+      } catch (e) {
+        console.error("Failed to fetch risk status");
+      }
+    };
+    fetchRisk();
+    const iv = setInterval(fetchRisk, 10000);
+    return () => clearInterval(iv);
+  }, []);
+
+  if (!risk) return null;
+
+  const isWarning = risk.kill_switch_active || risk.consecutive_losses >= 3;
+
+  return (
+    <div className="p-4 flex flex-col gap-3 flex-1 h-full overflow-hidden">
+      <div className="flex justify-between items-center shrink-0">
+        <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">System Safety</span>
+        <div className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all duration-500 ${risk.kill_switch_active ? 'bg-rose-500 text-white animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>
+          {risk.kill_switch_active ? 'KILL SWITCH ACTIVE' : 'RISK: NOMINAL'}
+        </div>
+      </div>
+
+      {risk.kill_switch_active && (
+        <div className="bg-rose-500/10 border border-rose-500/20 p-2 rounded shrink-0">
+          <p className="text-[10px] text-rose-400 font-mono">REASON: {risk.kill_switch_reason}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 mt-1 shrink-0">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-zinc-500 uppercase tracking-tighter">Daily PNL</span>
+          <span className={`text-sm font-mono font-bold ${risk.daily_pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+            {risk.daily_pnl >= 0 ? '+' : ''}{risk.daily_pnl.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-zinc-500 uppercase tracking-tighter">Loss Streak</span>
+          <span className={`text-sm font-mono font-bold ${risk.consecutive_losses >= 3 ? 'text-orange-500' : 'text-zinc-300'}`}>
+            {risk.consecutive_losses} / 5
+          </span>
+        </div>
+      </div>
+      
+      <div className="w-full bg-zinc-800/50 h-1 rounded-full mt-auto overflow-hidden">
+        <div 
+          className={`h-full transition-all duration-700 ${isWarning ? 'bg-rose-500' : 'bg-emerald-500'}`}
+          style={{ width: `${Math.min(100, (risk.consecutive_losses / 5) * 100)}%` }}
+        ></div>
+      </div>
+    </div>
+  );
+};
+

@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from loguru import logger
+from app.execution.risk_manager import risk_manager
 from typing import Dict, Any, List
 
 DATA_DIR = Path("data/records")
@@ -55,6 +56,37 @@ class PaperTradingEngine:
                 "equity_curve": self.equity_curve[-500:],  # keep last 500
                 "last_updated": datetime.now(timezone.utc).isoformat()
             }, f, indent=2)
+
+    def update_trailing_stops(self, current_prices: Dict[str, float]):
+        """Moves Stop Loss to Break Even when profit threshold is met."""
+        changed = False
+        for symbol, pos in self.positions.items():
+            if symbol not in current_prices:
+                continue
+            
+            price = current_prices[symbol]
+            side = pos["side"]
+            entry = pos["entry_price"]
+            
+            # Calculate current profit %
+            profit_pct = (price - entry) / entry if side == "LONG" else (entry - price) / entry
+            
+            # Rule: If profit > 2%, move SL to Break Even (Entry Price)
+            be_threshold = 0.02 # 2%
+            if profit_pct >= be_threshold:
+                current_sl = pos.get("stop_loss")
+                # Move to entry price if not already there or better
+                if side == "LONG" and (current_sl is None or current_sl < entry):
+                    pos["stop_loss"] = entry
+                    changed = True
+                    logger.info(f"[Risk] Move to BREAK EVEN for {symbol} LONG @ {entry}")
+                elif side == "SHORT" and (current_sl is None or current_sl > entry):
+                    pos["stop_loss"] = entry
+                    changed = True
+                    logger.info(f"[Risk] Move to BREAK EVEN for {symbol} SHORT @ {entry}")
+        
+        if changed:
+            self._save()
 
     def _append_trade_csv(self, trade: Dict[str, Any]):
         # Ensure backwards compatibility if reading an older file format
@@ -151,15 +183,42 @@ class PaperTradingEngine:
         if symbol in self.positions and self.positions[symbol]["side"] == side:
             return
 
-        # 2. Calculate sizing
-        equity = self.get_portfolio({symbol: price})["total_equity"]
-        alloc_quote = equity * risk_pct
+        # 1. Risk Manager Validation
+        portfolio = self.get_portfolio({symbol: price})
+        equity = portfolio["total_equity"]
         
-        if alloc_quote > self.balance:
-            alloc_quote = self.balance # cap at available balance
+        ok, reason_err = risk_manager.validate_new_trade(equity, len(self.positions))
+        if not ok:
+            logger.warning(f"[PaperTrading] Trade rejected: {reason_err}")
+            return
+
+        # 2. Calculate sizing based on 1% risk of equity
+        # SL/TP parameters
+        sl_pct = 0.015
+        tp_pct = 0.045
+        
+        # Apply slippage for calculation
+        exec_price = price * (1 + self.slippage_pct) if side == "LONG" else price * (1 - self.slippage_pct)
+        stop_loss = exec_price * (1 - sl_pct) if side == "LONG" else exec_price * (1 + sl_pct)
+        take_profit = exec_price * (1 + tp_pct) if side == "LONG" else exec_price * (1 - tp_pct)
+
+        # SizeBase = (Equity * Risk%) / abs(Entry - SL)
+        risk_amount = equity * risk_manager.risk_per_trade
+        price_diff = abs(exec_price - stop_loss)
+        
+        if price_diff == 0:
+            return
+
+        size_base = risk_amount / price_diff
+        alloc_quote = size_base * exec_price
+        
+        # Guardrails: cap at available balance and minimum order
+        if alloc_quote > self.balance * 0.95:
+            alloc_quote = self.balance * 0.95
+            size_base = alloc_quote / exec_price
 
         if alloc_quote < 10.0:
-            logger.warning(f"[PaperTrading] Insufficient balance to open {side} on {symbol}")
+            logger.warning(f"[PaperTrading] Insufficient balance for {side} on {symbol} (Cost: {alloc_quote:.2f})")
             return
 
         # Apply slippage
@@ -171,12 +230,6 @@ class PaperTradingEngine:
         cost = alloc_quote
         self.balance -= (cost + fee)
         self.total_fees_paid += fee
-
-        # Define SL / TP (using standard defaults, normally fetched from strategy)
-        sl_pct = 0.015
-        tp_pct = 0.045
-        stop_loss = exec_price * (1 - sl_pct) if side == "LONG" else exec_price * (1 + sl_pct)
-        take_profit = exec_price * (1 + tp_pct) if side == "LONG" else exec_price * (1 - tp_pct)
 
         trade_id = str(uuid.uuid4())[:8]
         self.positions[symbol] = {
@@ -250,9 +303,14 @@ class PaperTradingEngine:
             "take_profit": pos.get("take_profit", 0.0),
             "reasoning": reasoning
         }
+        
+        # Update Risk Manager
+        equity_before = self.get_portfolio({symbol: price})["total_equity"]
+        risk_manager.update_on_trade_close(realized_pnl, equity_before)
+
         self._append_trade_csv(trade)
         self._save()
-        logger.info(f"[PaperTrading] CLOSED {side} {symbol} @ {exec_price:.2f} | PNL: {realized_pnl:.2f} USDT")
+        logger.success(f"[PaperTrading] CLOSE {side} {symbol} @ {exec_price:.2f} (PNL: {realized_pnl:.2f})")
 
     def get_recent_trades(self, limit: int = 10) -> List[Dict[str, Any]]:
         trades = []

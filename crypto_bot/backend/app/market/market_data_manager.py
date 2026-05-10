@@ -13,6 +13,7 @@ class MarketDataManager:
         self.latest_tickers: Dict[str, Any] = {}
         self.latest_orderbooks: Dict[str, Any] = {}
         self.latest_trades: Dict[str, List[Any]] = {}
+        self.last_update_time = None
         
     def setup_streams(self, symbols: List[str]):
         """Initialize Binance WebSockets for specific execution symbols."""
@@ -37,6 +38,8 @@ class MarketDataManager:
 
     async def _handle_ws_message(self, stream_name: str, data: Dict[str, Any]):
         """Central demux for incoming websocket messages based on stream_name."""
+        from datetime import datetime, timezone
+        self.last_update_time = datetime.now(timezone.utc)
         try:
             if "@ticker" in stream_name:
                 symbol = data.get("s", "")
