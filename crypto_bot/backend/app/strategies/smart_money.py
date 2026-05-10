@@ -86,26 +86,31 @@ class SmartMoneyStrategy(BaseStrategy):
         else:
             # HOLD: Report proximity or state
             state_text = []
+            proximity_conf = 0.0
             if last_swing_high is not None and last_swing_low is not None:
-                # Calculate where price is relative to the current swing range
                 swing_range = last_swing_high - last_swing_low
                 if swing_range > 0:
-                    pos = (price - last_swing_low) / swing_range
-                    if pos > 0.8:
-                        state_text.append(f"Cerca de resistencia (Swing High {last_swing_high:.2f})")
-                    elif pos < 0.2:
-                        state_text.append(f"Cerca de soporte (Swing Low {last_swing_low:.2f})")
+                    pos_pct = (price - last_swing_low) / swing_range
+                    # Deviation from equilibrium (0.5). Max deviation is 0.5.
+                    deviation = abs(pos_pct - 0.5)
+                    # Map deviation (0.0 to 0.5) to confidence (0.0 to 0.35)
+                    proximity_conf = round((deviation / 0.5) * 0.35, 3)
+                    
+                    if pos_pct > 0.8:
+                        state_text.append(f"Premium/Resistencia ({last_swing_high:.2f})")
+                    elif pos_pct < 0.2:
+                        state_text.append(f"Discount/Soporte ({last_swing_low:.2f})")
                     else:
-                        state_text.append("En equilibrio estructural (premium/discount)")
+                        state_text.append("En equilibrio estructural")
             
-            if fvg_bull: state_text.append("FVG alcista en formación")
-            elif fvg_bear: state_text.append("FVG bajista en formación")
+            if fvg_bull: state_text.append("FVG alcista activo")
+            elif fvg_bear: state_text.append("FVG bajista activo")
 
-            reason = " | ".join(state_text) if state_text else "Sin desequilibrios (Imbalances) detectados."
+            reason = " | ".join(state_text) if state_text else "Sin imbalances."
             
             self._last_signal = SignalType.HOLD
-            self._confidence  = 0.0  # Confianza cero para no afectar el consenso cuando es neutro
-            self._reasoning   = f"Estructura neutra. {reason}"
+            self._confidence  = proximity_conf
+            self._reasoning   = f"{reason}"
 
     def generate_signal(self) -> Signal:
         symbol    = str(self._metadata.get("symbol", "UNKNOWN"))

@@ -104,11 +104,23 @@ class BreakoutVolumeStrategy(BaseStrategy):
                 f"({vol_multiple:.1f}× SMA). OBV falling."
             )
         else:
+            proximity = 0.0
+            if support is not None and resistance is not None and resistance > support:
+                channel_height = resistance - support
+                if channel_height > 0:
+                    dist_to_r = max(0, resistance - price)
+                    dist_to_s = max(0, price - support)
+                    
+                    if dist_to_r < channel_height * 0.2:
+                        proximity = 0.3 * (1 - (dist_to_r / (channel_height * 0.2)))
+                    elif dist_to_s < channel_height * 0.2:
+                        proximity = 0.3 * (1 - (dist_to_s / (channel_height * 0.2)))
+
             self._last_signal = SignalType.HOLD
-            self._confidence  = 0.0
+            self._confidence  = round(proximity, 3)
             self._reasoning   = (
-                f"No breakout: price={price:.2f}, "
-                f"S={support}, R={resistance}, vol×={vol_multiple:.2f}"
+                f"Consolidación en rango S={support:.0f} R={resistance:.0f}. "
+                f"Volumen {vol_multiple:.1f}× media."
             )
 
     def generate_signal(self) -> Signal:
