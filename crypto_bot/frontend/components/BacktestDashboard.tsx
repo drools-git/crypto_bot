@@ -324,14 +324,30 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
 
       if (markers && markers.length > 0) {
         try {
-          const formattedMarkers = markers.map(m => ({
-            ...m,
+          const formattedMarkers: SeriesMarker<any>[] = markers.map(m => ({
             time: Number(m.time) as any,
-            size: 2, // Increase size
-          })).sort((a, b) => a.time - b.time);
+            position: m.position as any,
+            color: m.color,
+            shape: 'circle', // Use circle for maximum compatibility
+            text: m.text,
+            size: 1, // Reset to standard size but check if it appears
+          }));
+
+          // Add a GUARANTEED marker at the first candle
+          formattedMarkers.push({
+             time: Number(priceData[0].time) as any,
+             position: 'aboveBar',
+             color: '#ffffff',
+             shape: 'arrowDown',
+             text: 'START',
+             size: 2
+          });
+
+          const sortedMarkers = formattedMarkers.sort((a, b) => (a.time as number) - (b.time as number));
           
           if (typeof priceSeries.setMarkers === 'function') {
-            priceSeries.setMarkers(formattedMarkers);
+            priceSeries.setMarkers(sortedMarkers);
+            console.log("Applied markers:", sortedMarkers.length);
           }
         } catch (mErr) {
           console.error("Failed to set markers on price chart", mErr);
@@ -372,12 +388,15 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
       if (markers && markers.length > 0) {
         try {
           if (typeof areaSeries.setMarkers === 'function') {
-             areaSeries.setMarkers(markers.map(m => ({
-               ...m,
+             const eqMarkers = markers.map(m => ({
                time: Number(m.time) as any,
-               position: 'inBar', // Better for lines
+               position: 'inBar' as any,
+               color: m.color,
+               shape: 'circle',
+               text: m.text,
                size: 1
-             })).sort((a,b) => a.time - b.time));
+             })).sort((a,b) => (a.time as number) - (b.time as number));
+             areaSeries.setMarkers(eqMarkers);
           }
         } catch (e) {
            console.error("Failed to set markers on equity chart", e);
