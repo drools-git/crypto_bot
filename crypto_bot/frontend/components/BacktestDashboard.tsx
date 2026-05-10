@@ -235,37 +235,30 @@ const EquityChart = ({ data }: { data: EquityPoint[] }) => {
     });
 
     try {
-      // Robust check for series addition in lightweight-charts v5
-      // @ts-ignore
-      const addArea = chart.addAreaSeries ? chart.addAreaSeries.bind(chart) : (chart.addSeries ? () => chart.addSeries('Area') : null);
-      
-      if (addArea) {
-        const areaSeries = addArea({
+      // Use standard v5 method with existence check
+      if (chart.addAreaSeries) {
+        const areaSeries = chart.addAreaSeries({
           lineColor: "#3b82f6",
           topColor: "rgba(59, 130, 246, 0.4)",
           bottomColor: "rgba(59, 130, 246, 0.05)",
           lineWidth: 2,
         });
 
-        const chartData = data.map(p => ({
-           time: p.time as any,
-           value: p.equity
-        }));
-
-        areaSeries.setData(chartData);
-        chart.timeScale().fitContent();
+        if (data && data.length > 0) {
+          const chartData = data.map(p => ({
+             time: p.time as any,
+             value: p.equity
+          }));
+          areaSeries.setData(chartData);
+          chart.timeScale().fitContent();
+        }
       } else {
-        // Fallback to basic Line series if Area is not available
-        const lineSeries = chart.addLineSeries({
-          color: "#3b82f6",
-          lineWidth: 2,
-        });
-        const chartData = data.map(p => ({
-           time: p.time as any,
-           value: p.equity
-        }));
-        lineSeries.setData(chartData);
-        chart.timeScale().fitContent();
+        // Safe fallback
+        const lineSeries = chart.addLineSeries({ color: "#3b82f6", lineWidth: 2 });
+        if (data && data.length > 0) {
+          lineSeries.setData(data.map(p => ({ time: p.time as any, value: p.equity })));
+          chart.timeScale().fitContent();
+        }
       }
     } catch (err) {
       console.error("Chart series error:", err);
