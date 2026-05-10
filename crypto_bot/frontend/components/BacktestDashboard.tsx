@@ -365,6 +365,16 @@ const BacktestVisualizer = ({ priceData, equityData, markers }: { priceData: Pri
         time: p.time as any,
         value: p.equity
       })));
+
+      if (markers && markers.length > 0) {
+        try {
+          if (typeof areaSeries.setMarkers === 'function') {
+             areaSeries.setMarkers(markers);
+          }
+        } catch (e) {
+           console.error("Failed to set markers on equity chart", e);
+        }
+      }
     }
 
     // 3. Synchronization
