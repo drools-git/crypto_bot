@@ -1,18 +1,11 @@
 /**
  * Global API Configuration
- * Centralizes backend connection details.
+ * Forced to 127.0.0.1 for maximum stability on Windows.
  */
 
-// On Windows local development, using 127.0.0.1 is more stable than 'localhost'
-// to avoid IPv6 (::1) resolution conflicts.
 export const BACKEND_PORT = 8001;
 
-export const getBackendHost = () => {
-  if (typeof window === 'undefined') return '127.0.0.1';
-  const hostname = window.location.hostname;
-  return (hostname === 'localhost' || hostname === '::1') ? '127.0.0.1' : hostname;
-};
-
 export const getBaseUrl = () => {
-  return `http://${getBackendHost()}:${BACKEND_PORT}/api/v1`;
+  // Always use 127.0.0.1 to avoid IPv6/localhost resolution issues in Chrome/Turbopack
+  return `http://127.0.0.1:${BACKEND_PORT}/api/v1`;
 };

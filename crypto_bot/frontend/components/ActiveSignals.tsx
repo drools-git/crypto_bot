@@ -43,8 +43,6 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
     console.log(`%c [ActiveSignals] Fetching signals (symbol=${symbol}, loading=${showLoading})... `, "color: #fbbf24; font-weight: bold;");
     if (showLoading) setLoading(true);
     try {
-      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
-      
       // Abort previous request if it exists
       if (abortControllerRef.current) abortControllerRef.current.abort();
       
