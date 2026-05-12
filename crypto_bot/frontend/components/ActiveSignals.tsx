@@ -36,7 +36,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
   const fetchSignals = async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
-      const host = window.location.hostname;
+      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
       
       // Abort previous request if it exists
       if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -47,7 +47,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
       
       const res = await fetch(
-        `http://${host}:8000/api/v1/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&limit=300`,
+        `http://${host}:8001/api/v1/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&limit=300`,
         { signal: controller.signal }
       );
       
