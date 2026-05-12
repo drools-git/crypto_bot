@@ -140,6 +140,10 @@ class StrategyManager:
                 signal.timeframe = timeframe
                 # Inject weight into signal metadata for consensus calculation
                 signal.metadata["weight"] = strategy.weight
+                
+                # Sanitize metadata (convert numpy types to native python types for JSON serialization)
+                signal.metadata = self._sanitize_data(signal.metadata)
+                
                 signals.append(signal)
 
                 strategy_logger.log_signal(signal, indicator_snapshot=snapshot)
@@ -192,6 +196,23 @@ class StrategyManager:
     # ------------------------------------------------------------------ #
     #  Private                                                             #
     # ------------------------------------------------------------------ #
+
+    def _sanitize_data(self, data: Any) -> Any:
+        """Recursively convert numpy types to native python types for JSON serialization."""
+        import numpy as np
+        if isinstance(data, dict):
+            return {k: self._sanitize_data(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._sanitize_data(v) for v in data]
+        elif isinstance(data, (np.int64, np.int32, np.int16, np.int8)):
+            return int(data)
+        elif isinstance(data, (np.float64, np.float32, np.float16)):
+            return float(data)
+        elif isinstance(data, np.ndarray):
+            return data.tolist()
+        elif pd.isna(data):
+            return None
+        return data
 
     def _get(self, strategy_id: str):
         if strategy_id not in self._instances:
