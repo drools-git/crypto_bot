@@ -36,6 +36,15 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+from fastapi import Request
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"REQUEST START: {request.method} {request.url.path}")
+    response = await call_next(request)
+    logger.info(f"REQUEST END: {response.status_code} for {request.url.path}")
+    return response
+
 from app.market.stream_services import start_market_streams, stop_market_streams
 from app.execution.signal_engine import signal_engine
 
