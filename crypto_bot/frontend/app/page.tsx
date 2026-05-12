@@ -12,13 +12,14 @@ import { PerformanceWidget, OpenPositionsWidget, RecentTradesWidget, RiskStatusW
 import { BacktestDashboard } from "@/components/BacktestDashboard";
 
 import { StrategyManagerView } from "@/components/StrategyManager";
+import { serverLog } from "@/config/debug";
 
 export default function TerminalDashboard() {
   const [timeframe, setTimeframe] = useState("1h");
   const [activeView, setActiveView] = useState<"terminal" | "backtest" | "strategies">("terminal");
 
   React.useEffect(() => {
-    console.log(`%c >>> VIEW CHANGED: ${activeView.toUpperCase()} <<< `, "background: #1e40af; color: #fff; font-weight: bold; padding: 4px;");
+    serverLog(`CAMBIO A TAB: ${activeView.toUpperCase()}`, 'info');
   }, [activeView]);
 
   return (

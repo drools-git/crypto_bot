@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { getBaseUrl } from "@/config/api";
+import { serverLog } from "@/config/debug";
 import { TrendingUp, TrendingDown, Minus, LogOut } from "lucide-react";
 
 type Signal = {
@@ -57,6 +58,10 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
       
       if (!res.ok) throw new Error(`HTTP ${res.status}: Backend unreachable or error.`);
       const json: ConsensusData = await res.json();
+      
+      const sigCount = json.signals?.length || 0;
+      serverLog(`OBJETO STRATEGIES CARGADO: ${sigCount} señales | Consenso: ${json.direction}`, 'success');
+      
       setData(json);
       setError(null);
     } catch (err: any) {
@@ -75,7 +80,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
     const timer = setTimeout(() => fetchSignals(true), 300);
     const iv = setInterval(() => fetchSignals(false), 30000); // Refresh every 30s
     return () => {
-      console.log("%c [ActiveSignals] COMPONENT UNMOUNTED ", "color: #ef4444; font-weight: bold;");
+      serverLog("OBJETO STRATEGIES DESTRUIDO (Cambio de pestaña)", "warn");
       clearTimeout(timer);
       clearInterval(iv);
     };
