@@ -13,6 +13,7 @@ class SignalType(str, Enum):
 class StrategyConfig(BaseModel):
     """Configurable parameters for any strategy. Extended per-strategy via extra fields."""
     enabled: bool = True
+    weight: int = 50  # 1 to 100
     params: Dict[str, Any] = Field(default_factory=dict)
 
 

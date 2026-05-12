@@ -11,9 +11,11 @@ import { SignalHistory } from "@/components/SignalHistory";
 import { PerformanceWidget, OpenPositionsWidget, RecentTradesWidget, RiskStatusWidget } from "@/components/Portfolio";
 import { BacktestDashboard } from "@/components/BacktestDashboard";
 
+import { StrategyManagerView } from "@/components/StrategyManager";
+
 export default function TerminalDashboard() {
   const [timeframe, setTimeframe] = useState("1h");
-  const [activeView, setActiveView] = useState<"terminal" | "backtest">("terminal");
+  const [activeView, setActiveView] = useState<"terminal" | "backtest" | "strategies">("terminal");
 
   return (
     <div className="h-screen w-screen bg-[#050505] text-zinc-200 flex flex-col overflow-hidden font-sans selection:bg-blue-500/30">
@@ -41,30 +43,16 @@ export default function TerminalDashboard() {
             >
               Backtest
             </span>
+            <span 
+              onClick={() => setActiveView("strategies")}
+              className={`${activeView === "strategies" ? "text-blue-500" : "hover:text-zinc-200"} cursor-pointer transition-colors`}
+            >
+              Strategies
+            </span>
             <span className="hover:text-zinc-200 cursor-pointer transition-colors">Portfolios</span>
           </div>
           <div className="h-4 w-[1px] bg-white/10 ml-2"></div>
-          <div className="flex items-center gap-2 ml-2">
-            <span className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">Chart TF:</span>
-            <select 
-              value={timeframe} 
-              onChange={(e) => setTimeframe(e.target.value)}
-              className="bg-[#111] border border-white/10 text-zinc-300 text-xs px-2 py-0.5 rounded outline-none focus:border-blue-500/50 transition-colors"
-            >
-              <option value="15m">15m</option>
-              <option value="1h">1H</option>
-              <option value="4h">4H</option>
-              <option value="1d">1D</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-4 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-zinc-400 font-mono">WS: DIRECT</span>
-          </div>
-          <Settings className="w-4 h-4 text-zinc-500 hover:text-zinc-300 cursor-pointer" />
+          {/* ... */}
         </div>
       </header>
 
@@ -72,6 +60,8 @@ export default function TerminalDashboard() {
       <div className="flex-1 flex overflow-hidden">
         {activeView === "backtest" ? (
           <BacktestDashboard />
+        ) : activeView === "strategies" ? (
+          <StrategyManagerView />
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 flex overflow-hidden">

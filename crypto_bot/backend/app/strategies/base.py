@@ -36,6 +36,7 @@ class BaseStrategy(ABC):
     def __init__(self, config: Optional[StrategyConfig] = None):
         self.config   = config or StrategyConfig()
         self._enabled = self.config.enabled
+        self._weight  = self.config.weight
         self._params  = {**self.default_risk_params, **self.config.params}
 
         # Internal state set by analyze()
@@ -44,6 +45,7 @@ class BaseStrategy(ABC):
         self._confidence:  float = 0.0
         self._reasoning:   str   = ""
         self._metadata:    Dict[str, Any] = {}
+        self._metadata["weight"] = self._weight
 
     # ------------------------------------------------------------------ #
     #  Public interface                                                    #
@@ -53,6 +55,10 @@ class BaseStrategy(ABC):
     def enabled(self) -> bool:
         return self._enabled
 
+    @property
+    def weight(self) -> int:
+        return self._weight
+
     def enable(self):
         self._enabled = True
         logger.info(f"[{self.strategy_id}] Strategy enabled.")
@@ -60,6 +66,11 @@ class BaseStrategy(ABC):
     def disable(self):
         self._enabled = False
         logger.info(f"[{self.strategy_id}] Strategy disabled.")
+
+    def update_weight(self, weight: int):
+        self._weight = max(1, min(100, weight))
+        self._metadata["weight"] = self._weight
+        logger.info(f"[{self.strategy_id}] Weight updated: {weight}")
 
     def update_params(self, params: Dict[str, Any]):
         """Hot-update configurable parameters without restarting."""
@@ -77,6 +88,7 @@ class BaseStrategy(ABC):
             "version":       self.version,
             "description":   self.description,
             "enabled":       self._enabled,
+            "weight":        self._weight,
             "params":        self._params,
         }
 

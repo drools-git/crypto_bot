@@ -114,6 +114,19 @@ def update_params(
         raise HTTPException(status_code=404, detail=f"Strategy '{strategy_id}' not found.")
 
 
+@router.post("/{strategy_id}/weight", summary="Update strategy weight")
+def update_weight(
+    strategy_id: str,
+    weight: int = Body(..., embed=True, ge=1, le=100),
+) -> Dict[str, Any]:
+    try:
+        strategy_manager.update_weight(strategy_id, weight)
+        strats = {s["strategy_id"]: s for s in strategy_manager.list_strategies()}
+        return strats[strategy_id]
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Strategy '{strategy_id}' not found.")
+
+
 @router.get("/log-config", summary="Get current strategy logging configuration")
 def get_log_config() -> Dict[str, Any]:
     return {

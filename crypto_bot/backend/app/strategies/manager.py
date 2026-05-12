@@ -1,12 +1,5 @@
-"""
-Strategy Manager
-────────────────
-Orchestrates all registered strategies:
-  - Instantiates strategies from registry on startup
-  - Runs analyze() + generate_signal() across enabled strategies
-  - Supports enable/disable and hot-param updates at runtime
-  - Returns aggregated signals with consensus metadata
-"""
+import json
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 import pandas as pd
 from loguru import logger
@@ -22,6 +15,9 @@ import app.strategies.breakout_volume      # noqa: F401
 import app.strategies.order_flow           # noqa: F401
 import app.strategies.smart_money          # noqa: F401
 
+DATA_DIR = Path("data/records")
+CONFIG_FILE = DATA_DIR / "strategies_config.json"
+
 
 class StrategyManager:
     """
@@ -31,6 +27,7 @@ class StrategyManager:
 
     def __init__(self):
         self._instances: Dict[str, Any] = {}  # strategy_id → BaseStrategy instance
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
         self._load_all()
 
     # ------------------------------------------------------------------ #
@@ -39,12 +36,43 @@ class StrategyManager:
 
     def _load_all(self):
         """Instantiate every strategy registered in the registry."""
+        persisted_config = self._load_persisted_config()
+        
         for sid, cls in registry.list_all().items():
             try:
-                self._instances[sid] = cls()
-                logger.info(f"[StrategyManager] Loaded '{sid}' ({cls.strategy_name})")
+                config = persisted_config.get(sid, {})
+                strat_config = StrategyConfig(
+                    enabled=config.get("enabled", True),
+                    weight=config.get("weight", 50),
+                    params=config.get("params", {})
+                )
+                self._instances[sid] = cls(config=strat_config)
+                logger.info(f"[StrategyManager] Loaded '{sid}' ({cls.strategy_name}) | enabled={strat_config.enabled}, weight={strat_config.weight}")
             except Exception as e:
                 logger.error(f"[StrategyManager] Failed to load '{sid}': {e}")
+
+    def _load_persisted_config(self) -> Dict[str, Any]:
+        if CONFIG_FILE.exists():
+            try:
+                with open(CONFIG_FILE, "r") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"[StrategyManager] Error loading config file: {e}")
+        return {}
+
+    def _save_config(self):
+        config = {}
+        for sid, inst in self._instances.items():
+            config[sid] = {
+                "enabled": inst.enabled,
+                "weight": inst.weight,
+                "params": inst.risk_params
+            }
+        try:
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(config, f, indent=4)
+        except Exception as e:
+            logger.error(f"[StrategyManager] Error saving config file: {e}")
 
     def reload(self):
         """Re-instantiate all strategies (picks up any newly registered ones)."""
@@ -57,12 +85,19 @@ class StrategyManager:
 
     def enable(self, strategy_id: str):
         self._get(strategy_id).enable()
+        self._save_config()
 
     def disable(self, strategy_id: str):
         self._get(strategy_id).disable()
+        self._save_config()
+
+    def update_weight(self, strategy_id: str, weight: int):
+        self._get(strategy_id).update_weight(weight)
+        self._save_config()
 
     def update_params(self, strategy_id: str, params: Dict[str, Any]):
         self._get(strategy_id).update_params(params)
+        self._save_config()
 
     def list_strategies(self) -> List[Dict[str, Any]]:
         return [inst.get_metadata() for inst in self._instances.values()]
@@ -95,7 +130,6 @@ class StrategyManager:
 
         for sid, strategy in self._instances.items():
             if not strategy.enabled:
-                logger.debug(f"[StrategyManager] Skipping disabled strategy '{sid}'")
                 continue
             try:
                 strategy._metadata["symbol"]    = symbol
@@ -104,12 +138,14 @@ class StrategyManager:
                 signal = strategy.generate_signal()
                 signal.symbol    = symbol
                 signal.timeframe = timeframe
+                # Inject weight into signal metadata for consensus calculation
+                signal.metadata["weight"] = strategy.weight
                 signals.append(signal)
 
                 strategy_logger.log_signal(signal, indicator_snapshot=snapshot)
 
                 logger.debug(
-                    f"[{sid}] {signal.signal} | conf={signal.confidence:.2f} | {signal.reasoning[:80]}"
+                    f"[{sid}] {signal.signal} | conf={signal.confidence:.2f} | weight={strategy.weight}"
                 )
             except Exception as e:
                 logger.error(f"[StrategyManager] Error in strategy '{sid}': {e}")
@@ -118,24 +154,27 @@ class StrategyManager:
 
     def get_consensus(self, signals: List[Signal]) -> Dict[str, Any]:
         """
-        Aggregate signals. Confidence is averaged only over strategies that
-        actually produced a signal (confidence > 0), so silent HOLDs don't dilute active signals.
+        Aggregate signals using weights. Confidence is weighted by the strategy's weight.
         """
         if not signals:
             return {"direction": SignalType.HOLD, "confidence": 0.0, "votes": {}, "signals": []}
 
+        # Weighted votes per direction
         votes: Dict[str, float] = {s.value: 0.0 for s in SignalType}
+        total_weight_per_dir: Dict[str, float] = {s.value: 0.0 for s in SignalType}
+        
         for sig in signals:
-            votes[sig.signal.value] += sig.confidence
+            weight = sig.metadata.get("weight", 50)
+            # score = confidence (0-1) * weight (1-100)
+            weighted_score = sig.confidence * (weight / 100.0)
+            votes[sig.signal.value] += weighted_score
+            total_weight_per_dir[sig.signal.value] += (weight / 100.0)
 
         dominant = max(votes, key=lambda k: votes[k])
 
-        # Only average over strategies that have a non-zero confidence (they spoke)
-        active = [s for s in signals if s.confidence > 0]
-        active_for_dominant = [s for s in active if s.signal.value == dominant]
-
-        if active_for_dominant:
-            avg_conf = sum(s.confidence for s in active_for_dominant) / len(active_for_dominant)
+        # Calculate average weighted confidence for the dominant direction
+        if total_weight_per_dir[dominant] > 0:
+            avg_conf = votes[dominant] / total_weight_per_dir[dominant]
         else:
             avg_conf = 0.0
 
@@ -144,7 +183,6 @@ class StrategyManager:
             "confidence":      round(avg_conf, 4),
             "votes":           {k: round(v, 4) for k, v in votes.items()},
             "n_signals":       len(signals),
-            "n_active":        len(active),
             "signals":         [s.model_dump() for s in signals],
         }
 
