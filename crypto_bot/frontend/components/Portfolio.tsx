@@ -55,7 +55,7 @@ export const usePortfolio = () => {
   const fetchPortfolio = async () => {
     try {
       const host = window.location.hostname || "localhost";
-      const res = await fetch(`http://${host}:8000/api/v1/execution/portfolio`);
+      const res = await fetch(`${getBaseUrl()}/execution/portfolio`);
       if (res.ok) {
         setPortfolio(await res.json());
       }
@@ -176,7 +176,7 @@ export const RecentTradesWidget = ({ limit = 5 }: { limit?: number }) => {
     const fetchTrades = async () => {
       try {
         const host = window.location.hostname || "localhost";
-        const res = await fetch(`http://${host}:8000/api/v1/execution/trades`);
+        const res = await fetch(`${getBaseUrl()}/execution/trades`);
         if (res.ok) setTrades(await res.json());
       } catch {}
     };
@@ -254,8 +254,7 @@ export const RiskStatusWidget = () => {
   useEffect(() => {
     const fetchRisk = async () => {
       try {
-        const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
-        const res = await fetch(`http://${host}:8001/api/v1/execution/risk`);
+        const res = await fetch(`${getBaseUrl()}/execution/risk`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setRisk(data);

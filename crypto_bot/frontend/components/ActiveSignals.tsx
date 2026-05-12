@@ -47,7 +47,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
       
       const res = await fetch(
-        `http://${host}:8001/api/v1/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&limit=300`,
+        `${getBaseUrl()}/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&limit=300`,
         { signal: controller.signal }
       );
       
@@ -84,7 +84,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
       )}
       {error && !loading && !data && (
         <div className="text-[10px] font-mono text-rose-500 bg-rose-500/10 p-2 rounded border border-rose-500/20 mb-2">
-          Error: {error}. Check if backend is running on port 8000.
+          Error: {error}. Verifique que el backend esté funcionando.
         </div>
       )}
       {error && !loading && data && (

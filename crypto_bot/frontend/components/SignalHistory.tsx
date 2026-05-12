@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { getBaseUrl } from "@/config/api";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 type OfficialSignal = {
@@ -20,8 +21,7 @@ export const SignalHistory = () => {
 
   const fetchHistory = async () => {
     try {
-      const host = window.location.hostname || "localhost";
-      const res = await fetch(`http://${host}:8000/api/v1/execution/signals/history`);
+      const res = await fetch(`${getBaseUrl()}/execution/signals/history`);
       if (!res.ok) throw new Error("Fetch failed");
       const data = await res.json();
       setHistory(data);

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { getBaseUrl } from "@/config/api";
 import { Play, Download, FileText, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
 import { createChart, ColorType, AreaSeries, LineSeries, CandlestickSeries, IChartApi, SeriesMarker, createSeriesMarkers } from "lightweight-charts";
 
@@ -47,8 +48,7 @@ export const BacktestDashboard = () => {
 
   const fetchFiles = async () => {
     try {
-      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
-      const res = await fetch(`http://${host}:8000/api/v1/backtest/files`);
+      const res = await fetch(`${getBaseUrl()}/backtest/files`);
       const data = await res.json();
       setFiles(data);
       if (data.length > 0 && !selectedFile) setSelectedFile(data[0].filename);
@@ -66,8 +66,7 @@ export const BacktestDashboard = () => {
     if (loading) {
       interval = setInterval(async () => {
         try {
-          const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
-          const res = await fetch(`http://${host}:8000/api/v1/backtest/progress`);
+          const res = await fetch(`${getBaseUrl()}/backtest/progress`);
           if (!res.ok) return;
           const data = await res.json();
           setProgress(data.progress);
@@ -85,8 +84,7 @@ export const BacktestDashboard = () => {
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
-      await fetch(`http://${host}:8000/api/v1/backtest/download`, {
+      await fetch(`${getBaseUrl()}/backtest/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol: "BTC/USDT", timeframe: "1h", days: 30 })
@@ -105,8 +103,7 @@ export const BacktestDashboard = () => {
     setResults(null);
     setProgress(0);
     try {
-      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
-      const res = await fetch(`http://${host}:8000/api/v1/backtest/run`, {
+      const res = await fetch(`${getBaseUrl()}/backtest/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: selectedFile, initial_balance: 100000.0 })
