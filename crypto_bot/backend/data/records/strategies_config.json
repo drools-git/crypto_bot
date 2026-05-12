@@ -14,7 +14,7 @@
     },
     "mean_reversion": {
         "enabled": true,
-        "weight": 50,
+        "weight": 30,
         "params": {
             "stop_loss_pct": 0.015,
             "take_profit_pct": 0.03,
@@ -48,8 +48,8 @@
         }
     },
     "smart_money_concepts": {
-        "enabled": false,
-        "weight": 100,
+        "enabled": true,
+        "weight": 70,
         "params": {
             "stop_loss_pct": 0.015,
             "take_profit_pct": 0.045,

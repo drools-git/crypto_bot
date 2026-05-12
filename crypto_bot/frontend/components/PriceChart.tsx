@@ -252,8 +252,16 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol, timeframe = "1h"
     let ws: WebSocket;
 
     const fetchData = async () => {
+      if (document.visibilityState !== 'visible') return;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       try {
-        const response = await fetch(`${getBaseUrl()}/market/indicators?symbol=${symbol}&timeframe=${timeframe}&limit=900`);
+        const response = await fetch(`${getBaseUrl()}/market/indicators?symbol=${symbol}&timeframe=${timeframe}&limit=900`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
 

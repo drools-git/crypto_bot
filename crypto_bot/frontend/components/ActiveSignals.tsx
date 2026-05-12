@@ -47,7 +47,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
       const controller = new AbortController();
       abortControllerRef.current = controller;
       
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
       
       const res = await fetch(
         `${getBaseUrl()}/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&limit=300`,
@@ -78,7 +78,14 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
     console.log("%c [ActiveSignals] COMPONENT MOUNTED ", "color: #10b981; font-weight: bold; border: 1px solid #10b981; padding: 2px;");
     // Small delay on mount to avoid request bursts when switching tabs
     const timer = setTimeout(() => fetchSignals(true), 300);
-    const iv = setInterval(() => fetchSignals(false), 30000); // Refresh every 30s
+    const iv = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchSignals(false);
+      } else {
+        console.log("%c [ActiveSignals] Polling paused (Tab hidden) ", "color: #71717a;");
+      }
+    }, 30000); // Refresh every 30s
+    
     return () => {
       serverLog("OBJETO STRATEGIES DESTRUIDO (Cambio de pestaña)", "warn");
       clearTimeout(timer);
