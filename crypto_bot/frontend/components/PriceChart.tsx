@@ -337,39 +337,56 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol, timeframe = "1h"
             `;
           }
 
-          // Connect WS for live price updates
-          const stream = symbol.toLowerCase().replace('/', '');
-          ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}@kline_${timeframe}`);
-          ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            if (message.k) {
-              const kline = message.k;
-              let tickTime = Math.floor(kline.t / 1000) as any;
+          // Connect WS for live price updates with fallback
+          const connectWS = (useUS = false) => {
+            const stream = symbol.toLowerCase().replace('/', '');
+            const domain = useUS ? 'stream.binance.us' : 'stream.binance.com';
+            ws = new WebSocket(`wss://${domain}/ws/${stream}@kline_${timeframe}`);
+            
+            ws.onmessage = (event) => {
+              const message = JSON.parse(event.data);
+              if (message.k) {
+                const kline = message.k;
+                let tickTime = Math.floor(kline.t / 1000) as any;
 
-              if (tickTime < lastCandleTime) {
-                if (lastCandleTime - tickTime <= 3600) {
-                  tickTime = lastCandleTime;
+                if (tickTime < lastCandleTime) {
+                  if (lastCandleTime - tickTime <= 3600) {
+                    tickTime = lastCandleTime;
+                  } else {
+                    return;
+                  }
                 } else {
-                  return;
+                  lastCandleTime = tickTime;
                 }
-              } else {
-                lastCandleTime = tickTime;
-              }
 
-              candleSeries.update({
-                time: tickTime,
-                open: parseFloat(kline.o),
-                high: parseFloat(kline.h),
-                low: parseFloat(kline.l),
-                close: parseFloat(kline.c),
-              });
-              volumeSeries.update({
-                time: tickTime,
-                value: parseFloat(kline.v),
-                color: parseFloat(kline.c) >= parseFloat(kline.o) ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'
-              } as any);
-            }
+                candleSeries.update({
+                  time: tickTime,
+                  open: parseFloat(kline.o),
+                  high: parseFloat(kline.h),
+                  low: parseFloat(kline.l),
+                  close: parseFloat(kline.c),
+                });
+                volumeSeries.update({
+                  time: tickTime,
+                  value: parseFloat(kline.v),
+                  color: parseFloat(kline.c) >= parseFloat(kline.o) ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'
+                } as any);
+              }
+            };
+
+            ws.onerror = () => {
+              if (ws) ws.close();
+            };
+
+            ws.onclose = () => {
+              // Try the other domain after a delay if the component is still mounted
+              if (mainRef.current) {
+                setTimeout(() => connectWS(!useUS), 5000);
+              }
+            };
           };
+
+          connectWS();
         }
       } catch (error) {
         console.error('Error fetching indicators:', error);

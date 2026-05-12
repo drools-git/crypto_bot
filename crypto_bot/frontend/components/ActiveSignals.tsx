@@ -31,14 +31,19 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
   const [data, setData] = useState<ConsensusData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchSignals = async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
       const host = window.location.hostname;
       
-      // Use AbortController for timeout
+      // Abort previous request if it exists
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+      
       const controller = new AbortController();
+      abortControllerRef.current = controller;
+      
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
       
       const res = await fetch(
@@ -53,9 +58,11 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
       setData(json);
       setError(null);
     } catch (err: any) {
+      if (err.name === 'AbortError') return; // Ignore cancellations
       console.error("Signal fetch error:", err);
-      setError(err.name === 'AbortError' ? "Request Timeout (Backend too slow)" : err.message);
+      setError(err.message);
     } finally {
+      // Only reset loading if this is still the active controller
       setLoading(false);
     }
   };
