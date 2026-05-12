@@ -12,31 +12,60 @@ interface Trade {
 export const TradeTape = ({ symbol }: { symbol: string }) => {
   const [trades, setTrades] = useState<Trade[]>([]);
 
+  const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
+
   useEffect(() => {
-    const stream = symbol.toLowerCase().replace('/', '');
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}@trade`);
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setTrades(prev => {
-        const newTrades = [{
-          id: data.t,
-          price: parseFloat(data.p),
-          qty: parseFloat(data.q),
-          isMaker: data.m,
-          time: data.T
-        }, ...prev];
-        return newTrades.slice(0, 30);
-      });
+    let ws: WebSocket;
+    let reconnectTimer: NodeJS.Timeout;
+
+    const connect = () => {
+      const stream = symbol.toLowerCase().replace('/', '');
+      setStatus('connecting');
+      // Use port 443 (standard HTTPS) to bypass restrictive firewalls
+      ws = new WebSocket(`wss://stream.binance.com/ws/${stream}@trade`);
+      
+      ws.onopen = () => setStatus('connected');
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        setTrades(prev => {
+          const newTrades = [{
+            id: data.t,
+            price: parseFloat(data.p),
+            qty: parseFloat(data.q),
+            isMaker: data.m,
+            time: data.T
+          }, ...prev];
+          return newTrades.slice(0, 30);
+        });
+      };
+
+      ws.onerror = () => setStatus('error');
+
+      ws.onclose = () => {
+        setStatus('connecting');
+        reconnectTimer = setTimeout(connect, 3000);
+      };
     };
-    return () => ws.close();
+
+    connect();
+    
+    return () => {
+      if (ws) ws.close();
+      clearTimeout(reconnectTimer);
+    };
   }, [symbol]);
 
   return (
     <div className="flex flex-col h-full bg-[#0a0a0a] text-xs font-mono overflow-hidden">
       <div className="flex justify-between text-zinc-500 mb-2 px-2">
         <span>Price</span>
-        <span>Amount</span>
+        <div className="flex items-center gap-2">
+          {status === 'connecting' && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />}
+          {status === 'error' && <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
+          {status === 'connected' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+          <span>Amount</span>
+        </div>
         <span>Time</span>
       </div>
       <div className="flex-1 overflow-y-auto px-2 space-y-1">

@@ -65,10 +65,15 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
           Analyzing strategies...
         </span>
       )}
-      {error && !loading && (
-        <span className="text-[10px] font-mono text-rose-500 bg-rose-500/10 p-2 rounded border border-rose-500/20">
-          Error: {error}
-        </span>
+      {error && !loading && !data && (
+        <div className="text-[10px] font-mono text-rose-500 bg-rose-500/10 p-2 rounded border border-rose-500/20 mb-2">
+          Error: {error}. Check if backend is running on port 8000.
+        </div>
+      )}
+      {error && !loading && data && (
+        <div className="text-[8px] font-mono text-rose-400/60 mb-1 italic">
+          ⚠️ Connection unstable. Showing last cached signals...
+        </div>
       )}
       {!loading && !error && active.length === 0 && (
         <span className="text-[10px] font-mono text-zinc-600 opacity-50">

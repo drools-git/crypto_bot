@@ -5,26 +5,55 @@ export const OrderBook = ({ symbol }: { symbol: string }) => {
   const [bids, setBids] = useState<[string, string][]>([]);
   const [asks, setAsks] = useState<[string, string][]>([]);
 
+  const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
+
   useEffect(() => {
-    const stream = symbol.toLowerCase().replace('/', '');
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}@depth20@100ms`);
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.bids && data.asks) {
-        setBids(data.bids.slice(0, 12));
-        setAsks(data.asks.slice(0, 12).reverse());
-      }
+    let ws: WebSocket;
+    let reconnectTimer: NodeJS.Timeout;
+
+    const connect = () => {
+      const stream = symbol.toLowerCase().replace('/', '');
+      setStatus('connecting');
+      
+      // Use port 443 (standard HTTPS) instead of 9443 to bypass restrictive firewalls
+      ws = new WebSocket(`wss://stream.binance.com/ws/${stream}@depth20@100ms`);
+      
+      ws.onopen = () => setStatus('connected');
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.bids && data.asks) {
+          setBids(data.bids.slice(0, 12));
+          setAsks(data.asks.slice(0, 12).reverse());
+        }
+      };
+
+      ws.onerror = () => setStatus('error');
+      
+      ws.onclose = () => {
+        setStatus('connecting');
+        reconnectTimer = setTimeout(connect, 3000);
+      };
     };
+
+    connect();
     
-    return () => ws.close();
+    return () => {
+      if (ws) ws.close();
+      clearTimeout(reconnectTimer);
+    };
   }, [symbol]);
 
   return (
     <div className="flex flex-col h-full bg-[#0a0a0a] text-xs font-mono overflow-hidden">
       <div className="flex justify-between text-zinc-500 mb-2 px-2">
         <span>Price</span>
-        <span>Amount</span>
+        <div className="flex items-center gap-2">
+          {status === 'connecting' && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title="Connecting to Binance..." />}
+          {status === 'error' && <div className="w-1.5 h-1.5 rounded-full bg-rose-500" title="Connection Error" />}
+          {status === 'connected' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Connected" />}
+          <span>Amount</span>
+        </div>
       </div>
       <div className="flex-1 flex flex-col justify-end px-2 space-y-[1px]">
         {asks.map((ask, i) => (
