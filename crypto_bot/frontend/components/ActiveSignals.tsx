@@ -151,14 +151,30 @@ function SignalItem({ sig }: { sig: Signal }) {
           <span className="text-[11px] font-bold">{sig.signal}</span>
         </div>
       </div>
-      <div className="flex items-start justify-between">
-        <span className={`text-[10px] font-mono flex-1 pr-2 transition-all ${expanded ? 'text-zinc-300' : 'text-zinc-400 line-clamp-1'}`}>
+      <div className={`flex items-start justify-between ${expanded ? 'mb-1' : ''}`}>
+        <span className={`text-[10px] font-mono flex-1 pr-2 transition-all ${expanded ? 'text-zinc-200' : 'text-zinc-400 line-clamp-1'}`}>
           {sig.reasoning}
         </span>
         <span className={`text-[11px] font-mono font-bold shrink-0 ${cfg.color}`}>
           {(sig.confidence * 100).toFixed(0)}%
         </span>
       </div>
+
+      {expanded && sig.metadata && (
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 pt-2 border-t border-white/5 mt-1">
+          {Object.entries(sig.metadata)
+            .filter(([k]) => !['symbol', 'timeframe', 'weight'].includes(k))
+            .map(([k, v]) => (
+              <div key={k} className="flex justify-between items-center bg-black/20 px-1.5 py-0.5 rounded">
+                <span className="text-[8px] uppercase text-zinc-500 font-bold tracking-tighter">{k.replace(/_/g, ' ')}</span>
+                <span className="text-[9px] font-mono text-zinc-300">
+                  {typeof v === 'number' ? v.toLocaleString(undefined, { maximumFractionDigits: 4 }) : String(v)}
+                </span>
+              </div>
+            ))
+          }
+        </div>
+      )}
     </div>
   );
 }
