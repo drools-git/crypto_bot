@@ -60,7 +60,8 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
       const json: ConsensusData = await res.json();
       
       const sigCount = json.signals?.length || 0;
-      serverLog(`OBJETO STRATEGIES CARGADO: ${sigCount} señales | Consenso: ${json.direction}`, 'success');
+      const details = json.signals.map(s => `${s.strategy_name}: ${s.signal} (${(s.confidence * 100).toFixed(0)}%)`).join(' | ');
+      serverLog(`PINTANDO ESTRATEGIAS: ${sigCount} señales [${details}] | Consenso: ${json.direction}`, 'success');
       
       setData(json);
       setError(null);
