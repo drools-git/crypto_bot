@@ -19,7 +19,7 @@ export const StrategyManagerView = () => {
 
   const fetchStrategies = async () => {
     try {
-      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
+      const host = window.location.hostname;
       const res = await fetch(`http://${host}:8000/api/v1/strategies/`);
       const data = await res.json();
       setStrategies(data);
@@ -37,7 +37,7 @@ export const StrategyManagerView = () => {
   const toggleStrategy = async (id: string, currentlyEnabled: boolean) => {
     setSaving(id);
     try {
-      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
+      const host = window.location.hostname;
       const action = currentlyEnabled ? "disable" : "enable";
       await fetch(`http://${host}:8000/api/v1/strategies/${id}/${action}`, { method: "POST" });
       await fetchStrategies();
@@ -51,7 +51,7 @@ export const StrategyManagerView = () => {
   const updateWeight = async (id: string, weight: number) => {
     setSaving(id);
     try {
-      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
+      const host = window.location.hostname;
       await fetch(`http://${host}:8000/api/v1/strategies/${id}/weight`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

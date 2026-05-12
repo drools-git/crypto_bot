@@ -252,7 +252,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol, timeframe = "1h"
 
     const fetchData = async () => {
       try {
-        const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
+        const host = window.location.hostname;
         const response = await fetch(`http://${host}:8000/api/v1/market/indicators?symbol=${symbol}&timeframe=${timeframe}&limit=900`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();

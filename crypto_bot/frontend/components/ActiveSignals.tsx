@@ -35,7 +35,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
   const fetchSignals = async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
-      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
+      const host = window.location.hostname;
       
       // Use AbortController for timeout
       const controller = new AbortController();
