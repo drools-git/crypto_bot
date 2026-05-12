@@ -18,11 +18,11 @@ export const TradeTape = ({ symbol }: { symbol: string }) => {
     let ws: WebSocket;
     let reconnectTimer: NodeJS.Timeout;
 
-    const connect = () => {
+    const connect = (useUS = false) => {
       const stream = symbol.toLowerCase().replace('/', '');
+      const domain = useUS ? 'stream.binance.us' : 'stream.binance.com';
       setStatus('connecting');
-      // Use port 443 (standard HTTPS) to bypass restrictive firewalls
-      ws = new WebSocket(`wss://stream.binance.com/ws/${stream}@trade`);
+      ws = new WebSocket(`wss://${domain}/ws/${stream}@trade`);
       
       ws.onopen = () => setStatus('connected');
       
@@ -44,7 +44,8 @@ export const TradeTape = ({ symbol }: { symbol: string }) => {
 
       ws.onclose = () => {
         setStatus('connecting');
-        reconnectTimer = setTimeout(connect, 3000);
+        const nextTryUS = !useUS;
+        reconnectTimer = setTimeout(() => connect(nextTryUS), 3000);
       };
     };
 

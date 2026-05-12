@@ -11,12 +11,12 @@ export const OrderBook = ({ symbol }: { symbol: string }) => {
     let ws: WebSocket;
     let reconnectTimer: NodeJS.Timeout;
 
-    const connect = () => {
+    const connect = (useUS = false) => {
       const stream = symbol.toLowerCase().replace('/', '');
+      const domain = useUS ? 'stream.binance.us' : 'stream.binance.com';
       setStatus('connecting');
       
-      // Use port 443 (standard HTTPS) instead of 9443 to bypass restrictive firewalls
-      ws = new WebSocket(`wss://stream.binance.com/ws/${stream}@depth20@100ms`);
+      ws = new WebSocket(`wss://${domain}/ws/${stream}@depth20@100ms`);
       
       ws.onopen = () => setStatus('connected');
       
@@ -32,7 +32,8 @@ export const OrderBook = ({ symbol }: { symbol: string }) => {
       
       ws.onclose = () => {
         setStatus('connecting');
-        reconnectTimer = setTimeout(connect, 3000);
+        const nextTryUS = !useUS;
+        reconnectTimer = setTimeout(() => connect(nextTryUS), 3000);
       };
     };
 

@@ -1,0 +1,59 @@
+{
+    "trend_following": {
+        "enabled": false,
+        "weight": 50,
+        "params": {
+            "stop_loss_pct": 0.025,
+            "take_profit_pct": 0.05,
+            "max_position_pct": 0.15,
+            "adx_threshold": 25.0,
+            "ema_short": 20,
+            "ema_long": 50,
+            "ema_vlong": 200
+        }
+    },
+    "mean_reversion": {
+        "enabled": true,
+        "weight": 50,
+        "params": {
+            "stop_loss_pct": 0.015,
+            "take_profit_pct": 0.03,
+            "max_position_pct": 0.1,
+            "rsi_oversold": 30.0,
+            "rsi_overbought": 70.0,
+            "bb_touch_pct": 0.005
+        }
+    },
+    "breakout_volume": {
+        "enabled": false,
+        "weight": 50,
+        "params": {
+            "stop_loss_pct": 0.02,
+            "take_profit_pct": 0.06,
+            "max_position_pct": 0.12,
+            "volume_spike_mult": 1.5,
+            "breakout_pct": 0.002,
+            "lookback": 20
+        }
+    },
+    "order_flow": {
+        "enabled": false,
+        "weight": 100,
+        "params": {
+            "stop_loss_pct": 0.018,
+            "take_profit_pct": 0.04,
+            "max_position_pct": 0.1,
+            "long_threshold": 3,
+            "short_threshold": -3
+        }
+    },
+    "smart_money_concepts": {
+        "enabled": false,
+        "weight": 100,
+        "params": {
+            "stop_loss_pct": 0.015,
+            "take_profit_pct": 0.045,
+            "max_position_pct": 0.1
+        }
+    }
+}

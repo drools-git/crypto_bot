@@ -32,27 +32,37 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSignals = async () => {
+  const fetchSignals = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
+      
+      // Use AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
       const res = await fetch(
-        `http://${host}:8000/api/v1/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&limit=300`
+        `http://${host}:8000/api/v1/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&limit=300`,
+        { signal: controller.signal }
       );
-      if (!res.ok) throw new Error("Fetch failed");
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Backend unreachable or error.`);
       const json: ConsensusData = await res.json();
       setData(json);
       setError(null);
     } catch (err: any) {
-      setError(err.message);
+      console.error("Signal fetch error:", err);
+      setError(err.name === 'AbortError' ? "Request Timeout (Backend too slow)" : err.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    setLoading(true);
-    fetchSignals();
-    const iv = setInterval(fetchSignals, 60_000); // refresh every minute
+    fetchSignals(true);
+    const iv = setInterval(() => fetchSignals(false), 30000); // Refresh every 30s
     return () => clearInterval(iv);
   }, [symbol, timeframe]);
 
