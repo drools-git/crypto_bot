@@ -94,7 +94,7 @@ class SmartMoneyStrategy(BaseStrategy):
                     # Deviation from equilibrium (0.5). Max deviation is 0.5.
                     deviation = abs(pos_pct - 0.5)
                     # Map deviation (0.0 to 0.5) to confidence (0.0 to 0.35)
-                    proximity_conf = round((deviation / 0.5) * 0.35, 3)
+                    proximity_conf = min(1.0, round((deviation / 0.5) * 0.35, 3))
                     
                     if pos_pct > 0.8:
                         state_text.append(f"Premium/Resistencia ({last_swing_high:.2f})")
