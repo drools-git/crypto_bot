@@ -35,6 +35,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchSignals = async (showLoading = false) => {
+    console.log(`%c [ActiveSignals] Fetching signals (symbol=${symbol}, loading=${showLoading})... `, "color: #fbbf24; font-weight: bold;");
     if (showLoading) setLoading(true);
     try {
       const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
@@ -69,10 +70,12 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
   };
 
   useEffect(() => {
+    console.log("%c [ActiveSignals] COMPONENT MOUNTED ", "color: #10b981; font-weight: bold; border: 1px solid #10b981; padding: 2px;");
     // Small delay on mount to avoid request bursts when switching tabs
     const timer = setTimeout(() => fetchSignals(true), 300);
     const iv = setInterval(() => fetchSignals(false), 30000); // Refresh every 30s
     return () => {
+      console.log("%c [ActiveSignals] COMPONENT UNMOUNTED ", "color: #ef4444; font-weight: bold;");
       clearTimeout(timer);
       clearInterval(iv);
     };

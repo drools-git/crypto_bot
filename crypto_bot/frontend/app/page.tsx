@@ -17,6 +17,10 @@ export default function TerminalDashboard() {
   const [timeframe, setTimeframe] = useState("1h");
   const [activeView, setActiveView] = useState<"terminal" | "backtest" | "strategies">("terminal");
 
+  React.useEffect(() => {
+    console.log(`%c >>> VIEW CHANGED: ${activeView.toUpperCase()} <<< `, "background: #1e40af; color: #fff; font-weight: bold; padding: 4px;");
+  }, [activeView]);
+
   return (
     <div className="h-screen w-screen bg-[#050505] text-zinc-200 flex flex-col overflow-hidden font-sans selection:bg-blue-500/30">
       
