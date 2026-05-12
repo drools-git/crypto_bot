@@ -56,9 +56,13 @@ async def get_signals(
     timeframe: str = Query("1h"),
     limit: int     = Query(300, ge=50, le=1000),
 ) -> List[Dict[str, Any]]:
-    df      = await _get_enriched_df(symbol, timeframe, limit)
-    signals = strategy_manager.run_all(df, symbol, timeframe)
-    return [s.model_dump() for s in signals]
+    try:
+        df      = await _get_enriched_df(symbol, timeframe, limit)
+        signals = strategy_manager.run_all(df, symbol, timeframe)
+        return [s.model_dump() for s in signals]
+    except Exception as e:
+        logger.error(f"CRITICAL ERROR in get_signals: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @router.get("/consensus", summary="Run all enabled strategies and return consensus signal")
@@ -67,9 +71,13 @@ async def get_consensus(
     timeframe: str = Query("1h"),
     limit: int     = Query(300, ge=50, le=1000),
 ) -> Dict[str, Any]:
-    df      = await _get_enriched_df(symbol, timeframe, limit)
-    signals = strategy_manager.run_all(df, symbol, timeframe)
-    return strategy_manager.get_consensus(signals)
+    try:
+        df      = await _get_enriched_df(symbol, timeframe, limit)
+        signals = strategy_manager.run_all(df, symbol, timeframe)
+        return strategy_manager.get_consensus(signals)
+    except Exception as e:
+        logger.error(f"CRITICAL ERROR in get_consensus: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @router.get("/{strategy_id}", summary="Get single strategy metadata")

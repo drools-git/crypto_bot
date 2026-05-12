@@ -102,10 +102,15 @@ async def get_klines_with_indicators(
         except Exception:
             pass  # Volume stays 0 if Binance fails
     
-    df = indicator_engine.add_indicators(df)
-    
-    # We must convert float NaNs and Infs to None to be JSON compliant
-    import numpy as np
-    df = df.replace([np.inf, -np.inf, np.nan], None)
-    
-    return df.to_dict(orient='records')
+    try:
+        df = indicator_engine.add_indicators(df)
+        
+        # We must convert float NaNs and Infs to None to be JSON compliant
+        import numpy as np
+        df = df.replace([np.inf, -np.inf, np.nan], None)
+        
+        return df.to_dict(orient='records')
+    except Exception as e:
+        from loguru import logger
+        logger.error(f"Error calculating indicators: {e}")
+        raise HTTPException(status_code=500, detail=f"Indicator calculation error: {str(e)}")

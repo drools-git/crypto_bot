@@ -393,7 +393,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol, timeframe = "1h"
       }
     };
 
-    fetchData();
+    const timer = setTimeout(fetchData, 100);
 
     const handleResize = () => {
       if (mainRef.current) mainChart.applyOptions({ width: mainRef.current.clientWidth, height: mainRef.current.clientHeight });
@@ -406,6 +406,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({ symbol, timeframe = "1h"
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      clearTimeout(timer);
       if (ws) ws.close();
       mainChart.remove();
       rsiChart.remove();

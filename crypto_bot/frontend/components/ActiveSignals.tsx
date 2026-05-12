@@ -69,9 +69,13 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
   };
 
   useEffect(() => {
-    fetchSignals(true);
+    // Small delay on mount to avoid request bursts when switching tabs
+    const timer = setTimeout(() => fetchSignals(true), 300);
     const iv = setInterval(() => fetchSignals(false), 30000); // Refresh every 30s
-    return () => clearInterval(iv);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(iv);
+    };
   }, [symbol, timeframe]);
 
   const active = data?.signals || [];
