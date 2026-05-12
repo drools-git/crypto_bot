@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { TrendingUp, TrendingDown, Minus, LogOut } from "lucide-react";
 
 type Signal = {
