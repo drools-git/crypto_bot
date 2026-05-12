@@ -34,7 +34,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
 
   const fetchSignals = async () => {
     try {
-      const host = window.location.hostname || "localhost";
+      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
       const res = await fetch(
         `http://${host}:8000/api/v1/strategies/consensus?symbol=${encodeURIComponent(symbol)}&timeframe=${timeframe}&limit=300`
       );

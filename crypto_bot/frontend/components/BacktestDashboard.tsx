@@ -47,7 +47,7 @@ export const BacktestDashboard = () => {
 
   const fetchFiles = async () => {
     try {
-      const host = window.location.hostname || "localhost";
+      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
       const res = await fetch(`http://${host}:8000/api/v1/backtest/files`);
       const data = await res.json();
       setFiles(data);
@@ -66,7 +66,7 @@ export const BacktestDashboard = () => {
     if (loading) {
       interval = setInterval(async () => {
         try {
-          const host = window.location.hostname || "localhost";
+          const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
           const res = await fetch(`http://${host}:8000/api/v1/backtest/progress`);
           if (!res.ok) return;
           const data = await res.json();
@@ -85,7 +85,7 @@ export const BacktestDashboard = () => {
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const host = window.location.hostname || "localhost";
+      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
       await fetch(`http://${host}:8000/api/v1/backtest/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,7 +105,7 @@ export const BacktestDashboard = () => {
     setResults(null);
     setProgress(0);
     try {
-      const host = window.location.hostname || "localhost";
+      const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
       const res = await fetch(`http://${host}:8000/api/v1/backtest/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
