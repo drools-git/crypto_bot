@@ -10,6 +10,6 @@ start "Crypto Bot Backend" cmd /k "cd backend && conda run -n crypto_bot uvicorn
 start "Crypto Bot Frontend" cmd /k "cd frontend && npm run dev -- -H 0.0.0.0 -p 4000"
 
 echo Services have been launched in separate windows!
-echo FastApi: http://localhost:8000
+echo FastApi: http://localhost:8001
 echo Next.js:  http://localhost:4000
 echo ==============================================

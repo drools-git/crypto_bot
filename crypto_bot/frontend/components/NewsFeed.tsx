@@ -8,7 +8,7 @@ export const NewsFeed = () => {
     const fetchNews = async () => {
       try {
         const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
-        const res = await fetch(`http://${host}:8000/api/v1/news/latest?limit=15`);
+        const res = await fetch(`http://${host}:8001/api/v1/news/latest?limit=15`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setNews(data);

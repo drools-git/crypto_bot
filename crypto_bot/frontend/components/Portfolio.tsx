@@ -255,7 +255,7 @@ export const RiskStatusWidget = () => {
     const fetchRisk = async () => {
       try {
         const host = window.location.hostname === 'localhost' || window.location.hostname === '::1' ? '127.0.0.1' : window.location.hostname;
-        const res = await fetch(`http://${host}:8000/api/v1/execution/risk`);
+        const res = await fetch(`http://${host}:8001/api/v1/execution/risk`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setRisk(data);
