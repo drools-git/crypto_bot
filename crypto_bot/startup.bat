@@ -1,5 +1,8 @@
 @echo off
 echo ==============================================
+echo Cleaning up previous instances...
+taskkill /F /IM python.exe /T >nul 2>&1
+taskkill /F /IM node.exe /T >nul 2>&1
 echo Starting Crypto Trading Workstation (Conda)
 echo ==============================================
 

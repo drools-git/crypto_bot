@@ -65,6 +65,7 @@ export const BacktestDashboard = () => {
     let interval: any;
     if (loading) {
       interval = setInterval(async () => {
+        if (document.visibilityState !== 'visible') return;
         try {
           const res = await fetch(`${getBaseUrl()}/backtest/progress`);
           if (!res.ok) return;

@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { getBaseUrl } from "@/config/api";
 import { serverLog } from "@/config/debug";
-import { TrendingUp, TrendingDown, Minus, LogOut } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, LogOut, AlertCircle } from "lucide-react";
 
 type Signal = {
   strategy_id: string;
@@ -81,7 +81,10 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
     const timer = setTimeout(() => fetchSignals(true), 300);
     const iv = setInterval(() => {
       if (document.visibilityState === 'visible') {
-        fetchSignals(false);
+        // Debounce: wait a tiny bit to make sure user actually stayed on the tab
+        setTimeout(() => {
+          if (document.visibilityState === 'visible') fetchSignals(false);
+        }, 500);
       } else {
         console.log("%c [ActiveSignals] Polling paused (Tab hidden) ", "color: #71717a;");
       }
@@ -104,13 +107,34 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
         </span>
       )}
       {error && !loading && !data && (
-        <div className="text-[10px] font-mono text-rose-500 bg-rose-500/10 p-2 rounded border border-rose-500/20 mb-2">
-          Error: {error}. Verifique que el backend esté funcionando.
+        <div className="flex flex-col gap-2 p-3 bg-rose-500/10 rounded border border-rose-500/20 mb-2">
+          <div className="flex items-center gap-2 text-rose-500">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-[10px] font-mono font-bold">CONEXIÓN PERDIDA</span>
+          </div>
+          <p className="text-[9px] font-mono text-rose-400/80 leading-relaxed">
+            {error}. Verifique que el backend esté funcionando en el puerto 8001.
+          </p>
+          <button 
+            onClick={() => fetchSignals(true)}
+            className="mt-1 py-1 px-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 text-[9px] font-bold rounded transition-colors border border-rose-500/30"
+          >
+            REINTENTAR AHORA
+          </button>
         </div>
       )}
       {error && !loading && data && (
-        <div className="text-[8px] font-mono text-rose-400/60 mb-1 italic">
-          ⚠️ Connection unstable. Showing last cached signals...
+        <div className="flex items-center justify-between bg-amber-500/10 p-2 rounded border border-amber-500/20 mb-2">
+          <div className="flex items-center gap-2 text-amber-500 animate-pulse">
+            <AlertCircle className="w-3 h-3" />
+            <span className="text-[8px] font-mono font-bold italic">CONEXIÓN INESTABLE (Usando caché)</span>
+          </div>
+          <button 
+            onClick={() => fetchSignals(false)}
+            className="text-[8px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20 transition-colors"
+          >
+            SINCRO
+          </button>
         </div>
       )}
       {!loading && !error && active.length === 0 && (
