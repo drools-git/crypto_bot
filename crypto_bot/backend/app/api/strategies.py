@@ -27,8 +27,20 @@ router = APIRouter(prefix="/strategies", tags=["strategies"])
 
 # ── helpers ──────────────────────────────────────────────────────────── #
 
+import time
+_ENRICHED_DF_CACHE: Dict[tuple, tuple] = {}
+CACHE_TTL = 10  # seconds
+
 async def _get_enriched_df(symbol: str, timeframe: str, limit: int) -> pd.DataFrame:
-    """Fetch OHLCV from market engine and enrich with indicators."""
+    """Fetch OHLCV from market engine and enrich with indicators (with 10s caching)."""
+    cache_key = (symbol, timeframe)
+    now = time.time()
+    
+    if cache_key in _ENRICHED_DF_CACHE:
+        ts, cached_df = _ENRICHED_DF_CACHE[cache_key]
+        if now - ts < CACHE_TTL:
+            return cached_df
+
     klines = await market_data_engine.get_historical_ohlcv(symbol, timeframe, min(1000, limit + 100))
     if not klines:
         raise HTTPException(status_code=503, detail="No market data available.")
@@ -40,6 +52,8 @@ async def _get_enriched_df(symbol: str, timeframe: str, limit: int) -> pd.DataFr
 
     df = indicator_engine.add_indicators(df)
     df = df.replace([np.inf, -np.inf], np.nan)
+    
+    _ENRICHED_DF_CACHE[cache_key] = (now, df)
     return df
 
 

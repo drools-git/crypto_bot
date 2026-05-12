@@ -34,8 +34,12 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isFetchingRef = useRef(false);
 
   const fetchSignals = async (showLoading = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    
     console.log(`%c [ActiveSignals] Fetching signals (symbol=${symbol}, loading=${showLoading})... `, "color: #fbbf24; font-weight: bold;");
     if (showLoading) setLoading(true);
     try {
@@ -70,7 +74,7 @@ export const ActiveSignals = ({ symbol = "BTC/USDT", timeframe = "1h" }: { symbo
       console.error("Signal fetch error:", err);
       setError(err.message);
     } finally {
-      // Only reset loading if this is still the active controller
+      isFetchingRef.current = false;
       setLoading(false);
     }
   };
