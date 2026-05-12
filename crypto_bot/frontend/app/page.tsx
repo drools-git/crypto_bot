@@ -62,54 +62,61 @@ export default function TerminalDashboard() {
       </header>
 
       {/* Main Workspace */}
-      <div className="flex-1 flex overflow-hidden">
-        {activeView === "backtest" ? (
+      <div className="flex-1 flex overflow-hidden relative">
+        
+        {/* VIEW: BACKTEST */}
+        <div className={`absolute inset-0 ${activeView === "backtest" ? "block" : "hidden"}`}>
           <BacktestDashboard />
-        ) : activeView === "strategies" ? (
+        </div>
+
+        {/* VIEW: STRATEGIES */}
+        <div className={`absolute inset-0 ${activeView === "strategies" ? "block" : "hidden"}`}>
           <StrategyManagerView />
-        ) : (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 flex overflow-hidden">
-              {/* LEFT PANEL */}
-              <div className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0 h-full">
-                <PanelSection title="WATCHLIST" className="shrink-0">
-                  <div className="flex justify-between items-center py-1 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
-                    <div className="flex gap-2 items-center">
-                      <span className="font-mono text-xs font-bold text-zinc-200">BTC/USDT</span>
-                    </div>
-                    <span className="font-mono text-xs text-emerald-500">+2.4%</span>
+        </div>
+
+        {/* VIEW: TERMINAL (Main Dashboard) */}
+        <div className={`flex-1 flex flex-col overflow-hidden ${activeView === "terminal" ? "flex" : "hidden"}`}>
+          <div className="flex-1 flex overflow-hidden">
+            {/* LEFT PANEL */}
+            <div className="w-80 border-r border-white/5 flex flex-col bg-[#0a0a0a] shrink-0 h-full">
+              <PanelSection title="WATCHLIST" className="shrink-0">
+                <div className="flex justify-between items-center py-1 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
+                  <div className="flex gap-2 items-center">
+                    <span className="font-mono text-xs font-bold text-zinc-200">BTC/USDT</span>
                   </div>
-                </PanelSection>
-                <PanelSection title="ACTIVE SIGNALS" className="flex-[3] overflow-hidden" flex>
-                  <ActiveSignals symbol="BTC/USDT" timeframe={timeframe} />
-                </PanelSection>
-                <PanelSection title="LATEST NEWS" className="flex-[2] overflow-hidden">
-                  <NewsFeed />
-                </PanelSection>
-              </div>
-
-              {/* CENTER PANEL (Chart) */}
-              <div className="flex-1 flex flex-col bg-black overflow-hidden">
-                <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
-                  <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">{timeframe} CHART - BTC/USDT</span>
+                  <span className="font-mono text-xs text-emerald-500">+2.4%</span>
                 </div>
-                <PriceChart symbol="BTC/USDT" timeframe={timeframe} />
-              </div>
-
-              {/* RIGHT PANEL */}
-              <div className="w-[300px] border-l border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
-                <PanelSection title="ORDER BOOK" flex>
-                  <OrderBook symbol="BTC/USDT" />
-                </PanelSection>
-                
-                <PanelSection title="MARKET TRADES" flex>
-                  <TradeTape symbol="BTC/USDT" />
-                </PanelSection>
-              </div>
+              </PanelSection>
+              <PanelSection title="ACTIVE SIGNALS" className="flex-[3] overflow-hidden" flex>
+                <ActiveSignals symbol="BTC/USDT" timeframe={timeframe} />
+              </PanelSection>
+              <PanelSection title="LATEST NEWS" className="flex-[2] overflow-hidden">
+                <NewsFeed />
+              </PanelSection>
             </div>
-            <BottomPanel />
+
+            {/* CENTER PANEL (Chart) */}
+            <div className="flex-1 flex flex-col bg-black overflow-hidden">
+              <div className="h-8 border-b border-white/5 flex items-center px-4 bg-white/[0.01] shrink-0">
+                <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">{timeframe} CHART - BTC/USDT</span>
+              </div>
+              <PriceChart symbol="BTC/USDT" timeframe={timeframe} />
+            </div>
+
+            {/* RIGHT PANEL */}
+            <div className="w-[300px] border-l border-white/5 flex flex-col bg-[#0a0a0a] shrink-0">
+              <PanelSection title="ORDER BOOK" flex>
+                <OrderBook symbol="BTC/USDT" />
+              </PanelSection>
+              
+              <PanelSection title="MARKET TRADES" flex>
+                <TradeTape symbol="BTC/USDT" />
+              </PanelSection>
+            </div>
           </div>
-        )}
+          <BottomPanel />
+        </div>
+
       </div>
     </div>
   );
