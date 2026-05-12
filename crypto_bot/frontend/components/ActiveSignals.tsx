@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
+import { getBaseUrl } from "@/config/api";
 import { TrendingUp, TrendingDown, Minus, LogOut } from "lucide-react";
 
 type Signal = {

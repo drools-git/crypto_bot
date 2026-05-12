@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { getBaseUrl } from "@/config/api";
 
 export const NewsFeed = () => {
   const [news, setNews] = useState<any[]>([]);

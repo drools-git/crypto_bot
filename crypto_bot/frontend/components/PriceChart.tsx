@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { getBaseUrl } from "@/config/api";
 import { createChart, ColorType, IChartApi, CandlestickSeries, LineSeries, HistogramSeries, CrosshairMode } from 'lightweight-charts';
 
 interface PriceChartProps {

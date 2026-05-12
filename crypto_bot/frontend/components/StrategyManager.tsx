@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { getBaseUrl } from "@/config/api";
 import { Settings, Shield, Zap, TrendingUp, BarChart3, Layers, Sliders, Save, CheckCircle2 } from "lucide-react";
 
 type Strategy = {
